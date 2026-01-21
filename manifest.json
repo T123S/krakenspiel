@@ -1,0 +1,29 @@
+{
+  "name": "Der blaue Krake - Unterwasserabenteuer",
+  "short_name": "Blaue Krake",
+  "description": "Ein spannendes Unterwasser-Abenteuer. Schwimme, sprinte und weiche Hindernissen aus!",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "background_color": "#001428",
+  "theme_color": "#4488ff",
+  "orientation": "landscape",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

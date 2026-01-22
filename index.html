@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>Der blaue Krake - Shop</title>
+    <title>Der blaue Krake - Shop & Balance</title>
     <!-- Favicon fallback -->
 	<link rel="icon" type="image/png" href="icon-192x192.png">
     <style>
@@ -181,7 +181,7 @@
         }
         .secondary-btn:hover { background: rgba(170, 255, 255, 0.1); }
         
-        .menu-btn-container { display: flex; gap: 15px; margin-top: 20px; }
+        .menu-btn-container, .level-btn-container { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; justify-content: center;}
 
         #color-selection { display: flex; gap: 15px; margin: 20px 0; }
         .color-option {
@@ -398,7 +398,7 @@
                 </div>
                 <div class="legend-text">
                     <strong>Perlen-Schild</strong><br>
-                    Schützt 5 Sek. vor Schaden
+                    Schützt 5 Sek. (+1 Sek/Level)
                 </div>
             </div>
             <div class="legend-item">
@@ -477,7 +477,10 @@
         <h2 id="level-title">Level Geschafft!</h2>
         <p id="level-score-info">Score: 0</p>
         <p id="level-desc">Bereit für die nächste Welt?</p>
-        <button id="next-level-btn">Weiter schwimmen</button>
+        <div class="level-btn-container">
+            <button id="level-shop-btn" class="secondary-btn" style="margin-top: 20px; margin-right: 15px;">Shop 🛒</button>
+            <button id="next-level-btn" style="margin-top: 20px;">Weiter schwimmen</button>
+        </div>
     </div>
 
     <script>
@@ -606,6 +609,7 @@
         const shopBtn = document.getElementById('shop-btn');
         const shopBackBtn = document.getElementById('shop-back-btn');
         const nextLevelBtn = document.getElementById('next-level-btn');
+        const levelShopBtn = document.getElementById('level-shop-btn');
         
         const healthFill = document.getElementById('health-fill');
         const energyFill = document.getElementById('energy-fill');
@@ -620,6 +624,8 @@
         const btnAttack = document.getElementById('btn-attack');
         const btnSprint = document.getElementById('btn-sprint');
         const colorOptions = document.querySelectorAll('.color-option');
+        
+        let previousGameState = 'MENU';
 
         // --- SHOP & DATA SYSTEM ---
         let playerData = {
@@ -629,7 +635,8 @@
             upgrades: {
                 thick_skin: false,
                 ink_tank: false
-            }
+            },
+            deathCount: 0 // Track defeats for pity timer
         };
 
         const SHOP_ITEMS = [
@@ -739,9 +746,6 @@
         let isTouchingJoystick = false;
         let joystickVector = { x: 0, y: 0 };
         let isTouchingSprint = false;
-
-        // ... [Classes: LightRay, Plankton, Bubble, PowerUp, Obstacle, InkParticle, Shockwave remain mostly same, omitted here for brevity if unchanged but included for completeness]
-        // I will keep them to ensure the file is complete.
 
         class LightRay {
             constructor() {
@@ -1031,7 +1035,9 @@
                     if (dist < this.radius + p.radius) {
                         playSound('powerup');
                         if (p.type === 'shield') {
-                            this.shieldTimer = 300; // 5 seconds
+                            // SCALING: Base 300 (5s) + 60 (1s) per level
+                            let duration = 300 + (currentLevelIndex * 60); 
+                            this.shieldTimer = duration; 
                             showFloatingText("SCHILD!", this.x, this.y - 50);
                         } else if (p.type === 'chili') {
                             this.chiliTimer = 300;
@@ -1417,14 +1423,21 @@
                 }
             }
 
-            // Power-Up Generation
+            // Power-Up Generation - BALANCING
             let powerUpCount = Math.floor(currentLevel.length / 1000);
+            
+            // Adjust Shield Probability based on Death Count (Pity Mechanic)
+            // Base chance 0.4. Increases by 0.05 per death, capped at +0.3 extra chance.
+            let shieldChance = 0.4 + Math.min(0.3, (playerData.deathCount || 0) * 0.05);
+
             for (let i = 0; i < powerUpCount; i++) {
                 let px = Math.random() * (currentLevel.length - 400) + 200;
                 let py = Math.random() * (height - 200) + 100;
                 let typeRand = Math.random();
                 let pType = 'shield';
-                if (typeRand < 0.4) pType = 'shield';
+                
+                // Using dynamic probability
+                if (typeRand < shieldChance) pType = 'shield';
                 else if (typeRand < 0.8) pType = 'chili';
                 else pType = 'health'; // Health is rarest (20%)
                 
@@ -1534,16 +1547,28 @@
                 gameState = 'MENU';
             });
             
-            shopBtn.addEventListener('click', () => {
-                menuScreen.style.display = 'none';
+            // --- SHOP NAVIGATION ---
+            function openShop(fromState) {
+                if(fromState === 'MENU') menuScreen.style.display = 'none';
+                if(fromState === 'LEVEL_END') levelScreen.style.display = 'none';
                 shopScreen.style.display = 'flex';
                 gameState = 'SHOP';
+                previousGameState = fromState;
                 renderShop();
-            });
+            }
+
+            shopBtn.addEventListener('click', () => openShop('MENU'));
+            levelShopBtn.addEventListener('click', () => openShop('LEVEL_END'));
+
             shopBackBtn.addEventListener('click', () => {
                 shopScreen.style.display = 'none';
-                menuScreen.style.display = 'flex';
-                gameState = 'MENU';
+                if (previousGameState === 'LEVEL_END') {
+                    levelScreen.style.display = 'flex';
+                    gameState = 'LEVEL_END';
+                } else {
+                    menuScreen.style.display = 'flex';
+                    gameState = 'MENU';
+                }
             });
 
             nextLevelBtn.addEventListener('click', startNextLevel);
@@ -1587,8 +1612,9 @@
         
         function gameOver(reason) { 
             gameState = 'GAMEOVER'; 
-            // SAVE SCORE
+            // SAVE SCORE & DEATHS
             playerData.coins += score;
+            playerData.deathCount = (playerData.deathCount || 0) + 1; // Increment defeats
             saveData();
 
             menuScreen.style.display = 'flex'; 

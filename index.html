@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>Der blaue Krake - Neue Level</title>
+    <title>Das Krakenspiel</title>
     <!-- Favicon fallback -->
 	<link rel="icon" type="image/png" href="icon-192x192.png">
     <style>
@@ -357,7 +357,7 @@
             <span class="label">Kraft (Sprint/Angriff)</span>
             <div class="bar-container"><div id="energy-fill" class="bar-fill"></div></div>
         </div>
-        <div id="desktop-hints">WASD: Schwimmen | Shift: Sprint | Leertaste: Schlag</div>
+        <div id="desktop-hints">WASD: Schwimmen | Shift: Sprint | Leertaste: Schlag | Alt+N: Level-Skip</div>
     </div>
 
     <div id="top-center-ui">
@@ -471,6 +471,8 @@
             <button id="shop-btn" class="secondary-btn">Shop 🛒</button>
             <button id="legend-btn" class="secondary-btn">Hilfe ❓</button>
         </div>
+        <!-- Reset Button -->
+        <button id="reset-btn" class="secondary-btn" style="color: #ff4444; border-color: #ff4444; margin-top: 30px; font-size: 14px; padding: 8px 20px; background: rgba(0,0,0,0.3);">Spielstand löschen 🗑️</button>
     </div>
 
     <div id="level-screen" style="display:none;">
@@ -610,6 +612,7 @@
         const shopBackBtn = document.getElementById('shop-back-btn');
         const nextLevelBtn = document.getElementById('next-level-btn');
         const levelShopBtn = document.getElementById('level-shop-btn');
+        const resetBtn = document.getElementById('reset-btn');
         
         const healthFill = document.getElementById('health-fill');
         const energyFill = document.getElementById('energy-fill');
@@ -1602,6 +1605,11 @@
                 // 2. Try lower case match (For CAPS LOCK or Shift+Letters)
                 else if(keys.hasOwnProperty(k)) keys[k] = true;
 
+                // Cheat Code: Alt + N to skip level
+                if (gameState === 'PLAYING' && e.altKey && k === 'n') {
+                    triggerVictory();
+                }
+
                 // Prevent scrolling for game keys
                 if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
                     e.preventDefault();
@@ -1632,6 +1640,15 @@
                 playBackgroundMusic();
                 startGame(); 
             }); 
+            
+            // RESET BUTTON LISTENER
+            resetBtn.addEventListener('click', () => {
+                if(confirm("Bist du sicher? Dein gesamter Fortschritt (Münzen, Skins, Upgrades) wird gelöscht.")) {
+                    localStorage.removeItem('krake_data_v1');
+                    location.reload();
+                }
+            });
+
             legendBtn.addEventListener('click', () => {
                 menuScreen.style.display = 'none';
                 legendScreen.style.display = 'flex';

@@ -8,7 +8,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192x192.png">
     
-    <title>Der blaue Krake - Shop & Balance</title>
+    <title>Der blaue Krake - Neue Level</title>
     <!-- Favicon fallback -->
 	<link rel="icon" type="image/png" href="icon-192x192.png">
     <style>
@@ -720,6 +720,35 @@
                 length: 12000, timeLimit: 50, 
                 enemyType: 'whale', enemyDensity: 2.5, obstacleFreq: 0.7, obstacleStyle: 'ruin',
                 fishHue: 50, lightColor: 'rgba(200, 255, 200, 0.1)'
+            },
+             // NEW LEVELS
+            {
+                name: "Schwarze Tiefe",
+                bgTop: "#000000", bgBottom: "#000008", sandColor: "#020205",
+                length: 13000, timeLimit: 55,
+                enemyType: 'angler', enemyDensity: 1.8, obstacleFreq: 0.4, obstacleStyle: 'rock',
+                fishHue: 240, lightColor: 'rgba(5, 5, 15, 0.05)' // Almost no ambient light
+            },
+            {
+                name: "Korallenriff Tiefe",
+                bgTop: "#003366", bgBottom: "#001133", sandColor: "#ccbb99",
+                length: 14000, timeLimit: 60,
+                enemyType: 'mix_small', enemyDensity: 2.0, obstacleFreq: 0.6, obstacleStyle: 'coral',
+                fishHue: 300, lightColor: 'rgba(100, 255, 200, 0.1)'
+            },
+            {
+                name: "Offenes Meer",
+                bgTop: "#0055aa", bgBottom: "#002255", sandColor: "#aabbcc",
+                length: 15000, timeLimit: 60,
+                enemyType: 'mix_big', enemyDensity: 2.2, obstacleFreq: 0.5, obstacleStyle: 'ice',
+                fishHue: 200, lightColor: 'rgba(200, 200, 255, 0.2)'
+            },
+            {
+                name: "Der Kraken-Graben",
+                bgTop: "#220000", bgBottom: "#110000", sandColor: "#330000",
+                length: 16000, timeLimit: 70,
+                enemyType: 'mix_all', enemyDensity: 2.5, obstacleFreq: 0.6, obstacleStyle: 'volcano',
+                fishHue: 0, lightColor: 'rgba(255, 50, 0, 0.1)'
             }
         ];
 
@@ -916,7 +945,8 @@
                 else if (type === 'eel') { this.radius = 15; this.length = 80; this.damage = 30; this.points = 150; this.speed = 0.02; this.timeBonus = 8; }
                 else if (type === 'seal') { this.radius = 30; this.damage = 25; this.points = 200; this.speed = 0.03; this.timeBonus = 6; }
                 else if (type === 'shark') { this.radius = 35; this.damage = 40; this.points = 300; this.speed = 0.04; this.timeBonus = 7; }
-                else if (type === 'whale') { this.radius = 60; this.damage = 50; this.points = 500; this.speed = 0.01; this.timeBonus = 10; }
+                else if (type === 'whale') { this.radius = 60; this.damage = 50; this.points = 500; this.speed = 0.02; this.timeBonus = 10; }
+                else if (type === 'angler') { this.radius = 30; this.damage = 45; this.points = 400; this.speed = 0.02; this.timeBonus = 8; }
             }
             update() {
                 if (this.stunned) {
@@ -925,8 +955,19 @@
                     if (this.y > height + 50 || this.y < -50 || Math.abs(this.vx) < 0.1) if(Math.abs(this.vx) < 0.5) this.dead = true;
                 } else {
                     if (this.type === 'eel') { this.x -= 1; this.y = this.baseY + Math.sin(frames * 0.1 + this.offset) * 30; if (this.x < player.x - 500) this.x += 2000; }
-                    else if (this.type === 'shark' || this.type === 'seal') { this.x -= this.speed * 100; this.y = this.baseY + Math.sin(frames * 0.05 + this.offset) * (this.type==='shark'?50:100); if (this.x < player.x - 600) this.x += 2500; }
-                    else if (this.type === 'whale') { this.x -= 0.5; this.y = this.baseY + Math.sin(frames * 0.02 + this.offset) * 20; }
+                    else if (this.type === 'shark' || this.type === 'seal' || this.type === 'angler') { 
+                        this.x -= this.speed * 100; 
+                        this.y = this.baseY + Math.sin(frames * 0.05 + this.offset) * (this.type==='shark'?50:100); 
+                        if (this.x < player.x - 600) this.x += 2500; 
+                    }
+                    else if (this.type === 'whale') { 
+                        this.x -= this.speed * 100; 
+                        // Swim motion for whale (up and down + pitch)
+                        this.y = this.baseY + Math.sin(frames * 0.03 + this.offset) * 60; 
+                        // Simulate pitch for swimming
+                        this.rotation = Math.sin(frames * 0.03 + this.offset) * 0.1;
+                        if (this.x < player.x - 800) this.x += 3000; 
+                    }
                     else if (this.type === 'puffer') { this.y = this.baseY + Math.sin(frames * this.speed + this.offset) * 20; this.inflateState = Math.sin(frames * 0.05 + this.offset); }
                     else { this.y = this.baseY + Math.sin(frames * this.speed + this.offset) * 40; this.x += Math.sin(frames * this.speed * 0.5 + this.offset) * 0.5; }
                     
@@ -934,7 +975,7 @@
                         let collisionDist = (this.type === 'eel') ? 35 : (this.type === 'whale' ? 70 : this.radius + player.radius);
                         if (Math.hypot(this.x - player.x, this.y - player.y) < collisionDist) {
                             let dmg = this.damage;
-                            if (playerData.upgrades.thick_skin) dmg *= 0.8; // UPGRADE: Thick Skin
+                            if (playerData.upgrades.thick_skin) dmg *= 0.8; 
                             player.health -= dmg; 
                             player.hitCooldown = 60; 
                             playSound('hit');
@@ -951,7 +992,45 @@
                 ctx.save(); ctx.translate(drawX, this.y); ctx.rotate(this.rotation);
                 if (this.type === 'seal') { ctx.scale(-1, 1); ctx.fillStyle = this.stunned ? '#888' : '#776655'; ctx.beginPath(); ctx.ellipse(0, 0, 40, 15, 0, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-35, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(30, -5, 2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#554433'; ctx.beginPath(); ctx.ellipse(10, 10, 15, 5, Math.PI/4, 0, Math.PI*2); ctx.fill(); }
                 else if (this.type === 'shark') { ctx.scale(-1, 1); ctx.fillStyle = this.stunned ? '#888' : '#556677'; ctx.beginPath(); ctx.moveTo(50, 0); ctx.quadraticCurveTo(0, -25, -50, -10); ctx.lineTo(-50, 10); ctx.quadraticCurveTo(0, 25, 50, 0); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-10, -40); ctx.lineTo(-20, -15); ctx.fill(); ctx.beginPath(); ctx.moveTo(-50, 0); ctx.lineTo(-70, -20); ctx.lineTo(-70, 20); ctx.fill(); ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(30, -5, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='black'; ctx.beginPath(); ctx.arc(30, -5, 1, 0, Math.PI*2); ctx.fill(); }
-                else if (this.type === 'whale') { ctx.fillStyle = this.stunned ? '#666' : '#223344'; ctx.beginPath(); ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#445566'; ctx.beginPath(); ctx.ellipse(0, 20, 60, 15, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#223344'; let tailWag = Math.sin(frames*0.05)*10; ctx.beginPath(); ctx.moveTo(-70, 0); ctx.lineTo(-100, -30+tailWag); ctx.lineTo(-100, 30+tailWag); ctx.fill(); ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(40, 0, 4, 0, Math.PI*2); ctx.fill(); }
+                else if (this.type === 'whale') { 
+                    // NO SCALE FLIP for whale, drawing natively Left-facing
+                    ctx.fillStyle = this.stunned ? '#666' : '#223344'; 
+                    ctx.beginPath(); ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI*2); ctx.fill(); // Body
+                    ctx.fillStyle = '#445566'; ctx.beginPath(); ctx.ellipse(0, 20, 60, 15, 0, 0, Math.PI*2); ctx.fill(); // Belly
+                    
+                    // Tail (on the RIGHT side now, since moving left)
+                    // Wait, if moving Left, Tail is Right.
+                    // Correct coords for Head Left: Head at -x, Tail at +x
+                    ctx.fillStyle = '#223344'; 
+                    let tailWag = Math.sin(frames*0.1 + this.offset)*15; 
+                    ctx.beginPath(); ctx.moveTo(70, 0); ctx.lineTo(100, -30+tailWag); ctx.lineTo(100, 30+tailWag); ctx.fill(); 
+                    
+                    // Eye (on the LEFT side)
+                    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-40, -5, 4, 0, Math.PI*2); ctx.fill(); 
+                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-40, -5, 1.5, 0, Math.PI*2); ctx.fill();
+                }
+                else if (this.type === 'angler') {
+                    ctx.scale(-1, 1);
+                    // Body
+                    ctx.fillStyle = this.stunned ? '#555' : '#2a2a2a';
+                    ctx.beginPath(); ctx.ellipse(0, 0, 30, 25, 0, 0, Math.PI*2); ctx.fill();
+                    // Jaw
+                    ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(0, 10, 20, 0, Math.PI); ctx.fill();
+                    // Teeth
+                    ctx.fillStyle = '#ddd'; ctx.beginPath(); 
+                    ctx.moveTo(15, 10); ctx.lineTo(12, 5); ctx.lineTo(9, 10); 
+                    ctx.moveTo(-15, 10); ctx.lineTo(-12, 5); ctx.lineTo(-9, 10); ctx.fill();
+                    // Lure
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(10, -20); ctx.quadraticCurveTo(30, -40, 40, -10); ctx.stroke();
+                    // Light (Glow)
+                    let glow = Math.abs(Math.sin(frames*0.1))*5 + 5;
+                    ctx.shadowBlur = 15; ctx.shadowColor = '#ffffaa';
+                    ctx.fillStyle = '#ffffaa'; ctx.beginPath(); ctx.arc(40, -10, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                    // Eye
+                    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(15, -5, 3, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(15, -5, 1, 0, Math.PI*2); ctx.fill();
+                }
                 else if (this.type === 'jelly') { let pulse = Math.sin(frames * 0.1) * 2; ctx.fillStyle = this.stunned ? 'rgba(150, 150, 150, 0.5)' : 'rgba(200, 255, 255, 0.7)'; ctx.beginPath(); ctx.arc(0, 0, this.radius + pulse, Math.PI, 0); ctx.bezierCurveTo(this.radius+pulse, 15, -(this.radius+pulse), 15, -(this.radius+pulse), 0); ctx.fill(); ctx.strokeStyle = this.stunned ? 'rgba(150,150,150,0.5)' : 'rgba(255, 200, 255, 0.6)'; ctx.lineWidth = 3; for(let i=-2; i<=2; i++) { ctx.beginPath(); ctx.moveTo(i*6, 5); ctx.quadraticCurveTo(i*8 + (this.stunned?0:Math.sin(frames*0.1+i)*5), 20, i*4, 35); ctx.stroke(); } } 
                 else if (this.type === 'puffer') { let scale = 1 + (this.inflateState * 0.2); ctx.scale(scale, scale); ctx.fillStyle = this.stunned ? '#888' : '#eebb00'; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#553300'; ctx.lineWidth = 2; for(let i=0; i<8; i++) { let a = (i/8)*Math.PI*2 + frames*0.05; ctx.beginPath(); ctx.moveTo(Math.cos(a)*this.radius, Math.sin(a)*this.radius); ctx.lineTo(Math.cos(a)*(this.radius+10), Math.sin(a)*(this.radius+10)); ctx.stroke(); } ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-8, -5, 6, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-8, -5, 2, 0, Math.PI*2); ctx.fill(); } 
                 else if (this.type === 'eel') { ctx.fillStyle = this.stunned ? '#666' : '#2a3b2a'; if (this.stunned) { ctx.beginPath(); ctx.ellipse(0, 0, 40, 10, 0, 0, Math.PI*2); ctx.fill(); } else { ctx.beginPath(); for(let i=0; i<=10; i++) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; if(i===0) ctx.moveTo(xPos, wave-th); else ctx.lineTo(xPos, wave-th); } for(let i=10; i>=0; i--) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; ctx.lineTo(xPos, wave+th); } ctx.closePath(); ctx.fill(); ctx.fillStyle = '#1a2b1a'; ctx.beginPath(); for(let i=2; i<=8; i++) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; if(i===2) ctx.moveTo(xPos, wave-th); else ctx.lineTo(xPos, wave-th-8); } ctx.lineTo(64, Math.sin(frames*0.2+4)*8); ctx.fill(); ctx.fillStyle='#ccff00'; let hw = Math.sin(frames*0.2)*8; ctx.beginPath(); ctx.arc(6, hw-4, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='black'; ctx.fillRect(6, hw-5, 1, 3); } }
@@ -959,6 +1038,7 @@
             }
         }
 
+        // ... [Rest of classes InkParticle, Shockwave, etc. remain unchanged]
         class InkParticle {
             constructor(x, y, color) { this.x = x; this.y = y; this.life = 1.0; this.vx = (Math.random()-0.5)*5; this.vy = (Math.random()-0.5)*5; this.size = Math.random()*10+5; this.color = color; }
             update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; this.size *= 0.95; }
@@ -979,6 +1059,7 @@
             }
         }
 
+        // ... [Functions showFloatingText, Player, GoalObject same]
         function showFloatingText(text, x, y) {
             const el = document.createElement('div');
             el.className = 'floating-text';
@@ -1427,7 +1508,6 @@
             let powerUpCount = Math.floor(currentLevel.length / 1000);
             
             // Adjust Shield Probability based on Death Count (Pity Mechanic)
-            // Base chance 0.4. Increases by 0.05 per death, capped at +0.3 extra chance.
             let shieldChance = 0.4 + Math.min(0.3, (playerData.deathCount || 0) * 0.05);
 
             for (let i = 0; i < powerUpCount; i++) {
@@ -1436,10 +1516,9 @@
                 let typeRand = Math.random();
                 let pType = 'shield';
                 
-                // Using dynamic probability
                 if (typeRand < shieldChance) pType = 'shield';
                 else if (typeRand < 0.8) pType = 'chili';
-                else pType = 'health'; // Health is rarest (20%)
+                else pType = 'health'; 
                 
                 let valid = true;
                 obstacles.forEach(o => { 
@@ -1457,11 +1536,18 @@
                     let ex = startX + Math.random() * SEGMENT_SIZE; 
                     let ey = 50 + Math.random() * (height - 100);
                     let valid = true; obstacles.forEach(o => { if (ex > o.x - 50 && ex < o.x + o.w + 50 && ey > o.y - 50 && ey < o.y + o.h + 50) valid = false; });
-                    if(valid) enemies.push(new Enemy(ex, ey, currentLevel.enemyType));
+                    
+                    // --- MIXED ENEMY LOGIC ---
+                    let type = currentLevel.enemyType;
+                    if (type === 'mix_small') type = ['jelly', 'puffer', 'eel'][Math.floor(Math.random()*3)];
+                    else if (type === 'mix_big') type = ['seal', 'shark', 'whale'][Math.floor(Math.random()*3)];
+                    else if (type === 'mix_all') type = ['jelly', 'puffer', 'eel', 'seal', 'shark', 'whale', 'angler'][Math.floor(Math.random()*7)];
+                    
+                    if(valid) enemies.push(new Enemy(ex, ey, type));
                 }
             }
             
-            goal = new GoalObject(currentLevel.length, height - 150, (levelIndex === 5) ? 'chest' : 'star');
+            goal = new GoalObject(currentLevel.length, height - 150, (levelIndex === 9) ? 'chest' : 'star');
             timeLeft = currentLevel.timeLimit; 
             if(player) { 
                 player.x = 200; player.y = height/2; player.vx = 0; player.vy = 0; 
@@ -1484,9 +1570,19 @@
             ctx.fillStyle = bgGradient; 
             ctx.fillRect(0, 0, width, height);
             
+            // Draw floor
             ctx.fillStyle = currentLevel.sandColor; ctx.beginPath(); ctx.moveTo(0, height);
             for (let x = 0; x <= width; x += 50) { let worldX = x + cameraX; ctx.lineTo(x, height - 40 + Math.sin(worldX * 0.005) * 30); }
             ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.fill();
+
+            // --- VIGNETTE FOR LEVEL 7 (Dark Deep) ---
+            if (currentLevel.name === "Schwarze Tiefe") {
+                let grad = ctx.createRadialGradient(width/2, height/2, height*0.3, width/2, height/2, height*0.9);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0,width,height);
+            }
         }
         function drawFarDecor() { plankton.forEach(p => p.draw()); farDecors.forEach(d => { let drawX = d.x - cameraX * 0.15; while (drawX < -500) drawX += currentLevel.length; while (drawX > width + 500) drawX -= currentLevel.length; if (drawX > -500 && drawX < width + 500) { ctx.fillStyle = d.color; if (d.type === 'mountain') { ctx.beginPath(); ctx.moveTo(drawX, height); ctx.lineTo(drawX + d.w/2, d.y); ctx.lineTo(drawX + d.w, height); ctx.fill(); } else if (d.type === 'fish_school') { d.x += d.speed; ctx.save(); ctx.translate(drawX, d.y); if (d.speed < 0) ctx.scale(-1, 1); for(let k=0; k<3; k++) { ctx.beginPath(); ctx.ellipse(k*15, k*10, 6, 3, 0, 0, Math.PI*2); ctx.fill(); } ctx.restore(); } } }); }
         function drawDecor() { decors.forEach(d => { let drawX = d.x - cameraX * 0.4; if (d.type === 'coral' && drawX > -100 && drawX < width + 100) { ctx.fillStyle = d.color; ctx.beginPath(); ctx.moveTo(drawX, height); ctx.quadraticCurveTo(drawX - 5, height - d.h/2, drawX, d.y - d.h); ctx.quadraticCurveTo(drawX + 5, height - d.h/2, drawX + 15, height); ctx.fill(); } else if (d.type === 'fish') { d.x += d.speed; if (d.x > currentLevel.length + 1000) d.x = -500; if (d.x < -500) d.x = currentLevel.length + 1000; if (drawX > -50 && drawX < width + 50) { ctx.fillStyle = d.color; ctx.save(); ctx.translate(drawX, d.y); if (d.speed < 0) ctx.scale(-1, 1); ctx.beginPath(); ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); } } }); }

@@ -1606,7 +1606,9 @@
                 else if(keys.hasOwnProperty(k)) keys[k] = true;
 
                 // Cheat Code: Alt + N to skip level
-                if (gameState === 'PLAYING' && e.altKey && k === 'n') {
+                // Use e.code to ignore keyboard layout modifiers (e.g. Mac Alt+N producing ~)
+                if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') {
+                    e.preventDefault(); 
                     triggerVictory();
                 }
 

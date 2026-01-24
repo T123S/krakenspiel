@@ -61,13 +61,18 @@
         .legend-grid { display: grid; grid-template-columns: 1fr; gap: 15px; text-align: left; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); max-width: 400px; width: 90%; max-height: 60vh; overflow-y: auto; }
         .legend-item { display: flex; align-items: center; gap: 15px; }
         .icon-container { width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; }
-        .legend-icon { width: 30px; height: 30px; box-shadow: 0 0 10px rgba(255,255,255,0.3); border-radius: 50%; }
-        .shield-icon { background: radial-gradient(circle, #fff, #aa00ff); border: 2px solid #fff; }
-        .magnet-icon { background: #ffdd00; border: 2px solid #fff; position: relative; }
+        .legend-icon { width: 30px; height: 30px; border-radius: 0; }
+        
+        .shield-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,22 C12,22 20,18 20,12 C20,9 18,5 12,2 C6,5 4,9 4,12 C4,18 12,22 12,22 Z" fill="%23cc99ff" stroke="white" stroke-width="1"/><circle cx="12" cy="14" r="5" fill="white" stroke="%23aa00ff" stroke-width="1"/></svg>') no-repeat center; }
+        
+        .magnet-icon { width:30px; height:30px; background: #ffdd00; border: 2px solid #fff; border-radius: 50%; position: relative; }
         .magnet-icon::after { content: 'U'; color: red; font-weight: bold; position: absolute; top: 5px; left: 9px; font-family: sans-serif; }
-        .potion-icon { background: #00ffaa; border: 2px solid #fff; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); }
-        .chili-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cc0000"><path d="M17,5C17,5 16,3 14,3C11,3 10,7 10,7C10,7 6,8 5,12C4,16 6,21 6,21C6,21 8,20 9,18C10,16 10,13 12,11C14,9 17,5 17,5Z" /><path d="M14,3C14,3 15,1 17,1L15,5" stroke="%2300aa00" stroke-width="2"/></svg>') no-repeat center; }
-        .health-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ff2244"><path d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z"/></svg>') no-repeat center; }
+        
+        .potion-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2 L12,6 L7,10 L7,22 L17,22 L17,10 L12,6" fill="%23aa00ff" stroke="white" stroke-width="1"/><circle cx="10" cy="18" r="1.5" fill="rgba(255,255,255,0.5)"/><circle cx="14" cy="14" r="2" fill="rgba(255,255,255,0.5)"/></svg>') no-repeat center; }
+        
+        .chili-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,2 Z" fill="%23ffff00" stroke="%23ffaa00" stroke-width="1"/></svg>') no-repeat center; }
+        
+        .health-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z" fill="red" stroke="white" stroke-width="1"/><path d="M7,6 Q9,6 10,8" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/></svg>') no-repeat center; }
 
         /* Shop */
         #shop-display-coins { font-size: 24px; color: #ffd700; margin-bottom: 20px; text-shadow: 0 0 10px #ffaa00; }
@@ -155,8 +160,8 @@
             <div class="legend-item"><div class="icon-container"><div class="legend-icon shield-icon"></div></div><div class="legend-text"><strong>Perlen-Schild</strong><br>Schützt 5 Sek. (+1 Sek/Level)</div></div>
             <div class="legend-item"><div class="icon-container"><div class="legend-icon magnet-icon"></div></div><div class="legend-text"><strong>Münz-Magnet</strong><br>Zieht Münzen an</div></div>
             <div class="legend-item"><div class="icon-container"><div class="legend-icon potion-icon"></div></div><div class="legend-text"><strong>Schrumpf-Trank</strong><br>Krake wird winzig klein</div></div>
-            <div class="legend-item"><div class="icon-container"><div class="legend-icon chili-icon"></div></div><div class="legend-text"><strong>Chili-Schote</strong><br>Energie + Turbospeed</div></div>
-            <div class="legend-item"><div class="icon-container"><div class="legend-icon health-icon"></div></div><div class="legend-text"><strong>Herz-Container</strong><br>Heilt 25% Gesundheit</div></div>
+            <div class="legend-item"><div class="icon-container"><div class="legend-icon chili-icon"></div></div><div class="legend-text"><strong>Energie-Blitz</strong><br>Energie + Turbospeed</div></div>
+            <div class="legend-item"><div class="icon-container"><div class="legend-icon health-icon"></div></div><div class="legend-text"><strong>Rubin-Herz</strong><br>Heilt 25% Gesundheit</div></div>
         </div>
         <h3>Boss-Kämpfe</h3>
         <p style="font-size: 14px; margin: 5px;">Nutze Tinte (Leertaste/Angriff), um Bosse in Level 5 und 10 zu besiegen!</p>
@@ -490,13 +495,61 @@
             draw() {
                 let drawX = this.x - cameraX; if (drawX < -50 || drawX > width + 50) return;
                 ctx.save(); ctx.translate(drawX, this.y);
-                let glowColor = this.type === 'shield' ? 'rgba(200, 100, 255, 0.4)' : (this.type === 'chili' ? 'rgba(255, 100, 50, 0.4)' : (this.type === 'magnet' ? 'rgba(255, 220, 0, 0.4)' : (this.type === 'potion' ? 'rgba(0, 255, 100, 0.4)' : 'rgba(255, 50, 50, 0.4)')));
-                ctx.fillStyle = glowColor; ctx.beginPath(); ctx.arc(0, 0, this.radius + 10 + Math.sin(this.wobble)*5, 0, Math.PI*2); ctx.fill();
-                if (this.type === 'shield') { ctx.fillStyle = '#e0ccff'; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#aa00ff'; ctx.lineWidth=2; ctx.stroke(); } 
-                else if (this.type === 'chili') { ctx.rotate(Math.sin(this.wobble)*0.2); ctx.fillStyle = '#cc0000'; ctx.beginPath(); ctx.moveTo(5, -15); ctx.quadraticCurveTo(15, -5, 10, 5); ctx.quadraticCurveTo(5, 15, -10, 20); ctx.quadraticCurveTo(-5, 0, 5, -15); ctx.fill(); ctx.fillStyle = '#00aa00'; ctx.beginPath(); ctx.moveTo(2, -15); ctx.lineTo(8, -15); ctx.lineTo(10, -22); ctx.lineTo(0, -20); ctx.fill(); } 
-                else if (this.type === 'health') { ctx.fillStyle = '#ff2244'; let r = this.radius; ctx.beginPath(); ctx.moveTo(0, r/2); ctx.bezierCurveTo(r/2, -r/2, r, 0, 0, r); ctx.bezierCurveTo(-r, 0, -r/2, -r/2, 0, r/2); ctx.fill(); }
-                else if (this.type === 'magnet') { ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0,0,15, Math.PI, 0); ctx.stroke(); ctx.fillRect(-15,0,10,20); ctx.fillRect(5,0,10,20); ctx.fillStyle='red'; ctx.font='bold 12px sans-serif'; ctx.fillText('U', -4, 15); }
-                else if (this.type === 'potion') { ctx.fillStyle = '#00ffaa'; ctx.beginPath(); ctx.moveTo(-10, 15); ctx.lineTo(10, 15); ctx.lineTo(5, -10); ctx.lineTo(-5, -10); ctx.fill(); ctx.fillStyle='white'; ctx.fillRect(-2,-12,4,4); }
+                
+                // Glow effect based on type
+                let glowColor = this.type === 'shield' ? 'rgba(200, 100, 255, 0.4)' : (this.type === 'chili' ? 'rgba(255, 220, 50, 0.4)' : (this.type === 'magnet' ? 'rgba(255, 220, 0, 0.4)' : (this.type === 'potion' ? 'rgba(170, 0, 255, 0.4)' : 'rgba(255, 50, 50, 0.4)')));
+                ctx.fillStyle = glowColor; 
+                ctx.beginPath(); ctx.arc(0, 0, this.radius + 8 + Math.sin(this.wobble)*5, 0, Math.PI*2); ctx.fill();
+
+                // Wobble rotation for fun
+                ctx.rotate(Math.sin(this.wobble) * 0.1);
+
+                // Use SVG Paths for perfect match with Legend
+                // SVG viewbox is typically 24x24. We scale it up and center it.
+                // Translate -12, -12 to center the 0,0 coordinate relative to the icon center
+                
+                if (this.type === 'magnet') {
+                    // Keep the cool horseshoe magnet for gameplay as requested previously
+                    ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0,0,15, Math.PI, 0); ctx.stroke(); 
+                    ctx.fillRect(-15,0,10,20); ctx.fillRect(5,0,10,20); 
+                    ctx.fillStyle='red'; ctx.font='bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('U', 0, 8);
+                } else {
+                    // SVG Drawing Scale
+                    ctx.scale(1.8, 1.8);
+                    ctx.translate(-12, -12);
+
+                    if (this.type === 'shield') { 
+                        const p = new Path2D("M12,22 C12,22 20,18 20,12 C20,9 18,5 12,2 C6,5 4,9 4,12 C4,18 12,22 12,22 Z");
+                        ctx.fillStyle = "#cc99ff"; ctx.fill(p);
+                        ctx.strokeStyle = "white"; ctx.lineWidth = 1; ctx.stroke(p);
+                        // Pearl
+                        ctx.beginPath(); ctx.arc(12, 14, 5, 0, Math.PI*2); 
+                        ctx.fillStyle = "white"; ctx.fill(); 
+                        ctx.strokeStyle = "#aa00ff"; ctx.stroke();
+                    } 
+                    else if (this.type === 'chili') { 
+                        const p = new Path2D("M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,2 Z");
+                        ctx.fillStyle = "#ffff00"; ctx.fill(p);
+                        ctx.strokeStyle = "#ffaa00"; ctx.lineWidth = 1; ctx.stroke(p);
+                    } 
+                    else if (this.type === 'health') { 
+                        const p = new Path2D("M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z");
+                        ctx.fillStyle = "red"; ctx.fill(p);
+                        ctx.strokeStyle = "white"; ctx.lineWidth = 1; ctx.stroke(p);
+                        // Shine
+                        const h = new Path2D("M7,6 Q9,6 10,8");
+                        ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 2; ctx.stroke(h);
+                    }
+                    else if (this.type === 'potion') { 
+                        const p = new Path2D("M12,2 L12,6 L7,10 L7,22 L17,22 L17,10 L12,6");
+                        ctx.fillStyle = "#aa00ff"; ctx.fill(p);
+                        ctx.strokeStyle = "white"; ctx.lineWidth = 1; ctx.stroke(p);
+                        // Bubbles
+                        ctx.fillStyle = "rgba(255,255,255,0.5)";
+                        ctx.beginPath(); ctx.arc(10, 18, 1.5, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(14, 14, 2, 0, Math.PI*2); ctx.fill();
+                    }
+                }
                 ctx.restore();
             }
         }

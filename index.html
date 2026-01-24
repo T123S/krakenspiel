@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4488ff">
     <link rel="manifest" href="manifest.json">
-    <title>Die Krake</title>
+    <title>Der blaue Krake - Boss Update</title>
     <!-- Favicon fallback -->
 	<link rel="icon" type="image/png" href="icon-192x192.png">
     <style>
@@ -172,7 +172,7 @@
     </div>
 
     <div id="menu-screen">
-        <h1>Der Krake</h1>
+        <h1>Das Krakenspiel</h1>
         <p>Wähle deine Farbe:</p>
         <div id="color-selection">
             <div class="color-option selected" style="background: #4488ff;" data-color="#4488ff"></div> 
@@ -181,10 +181,7 @@
             <div class="color-option" style="background: #aa44ff;" data-color="#aa44ff"></div> 
             <div class="color-option" style="background: #ffaa00;" data-color="#ffaa00"></div> 
         </div>
-        <div class="settings-group">
-            <label><input type="checkbox" id="check-music" checked> Musik 🎵</label>
-            <label><input type="checkbox" id="check-sfx" checked> Geräusche 🔊</label>
-        </div>
+
         <button id="start-btn">Abtauchen (Story)</button>
         <button id="endless-btn">Endlos-Modus ♾️</button>
         <div class="menu-btn-container">
@@ -192,6 +189,11 @@
             <button id="legend-btn" class="secondary-btn">Hilfe ❓</button>
         </div>
         <button id="reset-btn" class="secondary-btn" style="color: #ff4444; border-color: #ff4444; margin-top: 20px; font-size: 14px; padding: 5px 15px; background: rgba(0,0,0,0.3);">Reset 🗑️</button>
+        
+        <div class="settings-group" style="margin-top: 25px;">
+            <label><input type="checkbox" id="check-music" checked> Musik 🎵</label>
+            <label><input type="checkbox" id="check-sfx" checked> Geräusche 🔊</label>
+        </div>
     </div>
 
     <div id="level-screen" style="display:none;">

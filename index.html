@@ -424,12 +424,13 @@
                 // Hit by Shockwave
                 shockwaves.forEach(s => {
                     let sDist = Math.hypot(s.x - this.x, s.y - this.y);
-                    if (sDist < 80 + s.radius && s.power > 0) {
-                        this.health -= 10; // Damage per tick/hit
+                    // Radius detection increased to 100 (from 80) for better hit registration
+                    if (sDist < 100 + s.radius && s.power > 0) {
+                        this.health -= 50; // DAMAGE INCREASED FROM 10 TO 50
                         playSound('boss_hit');
                         s.power = 0; // Consume shockwave
-                        // Flash effect
-                        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 60, 0, Math.PI*2); ctx.fill();
+                        // Flash effect - RED for visible damage
+                        ctx.fillStyle = 'rgba(255, 50, 50, 0.8)'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 80, 0, Math.PI*2); ctx.fill();
                     }
                 });
 
@@ -935,7 +936,14 @@
             loadData(); resize(); window.addEventListener('resize', resize);
             window.addEventListener('keydown', e => { 
                 const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = true; else if(keys.hasOwnProperty(k)) keys[k] = true;
-                if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { e.preventDefault(); if (boss) boss.health = 0; else triggerVictory(); }
+                if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { 
+                    e.preventDefault(); 
+                    if (boss && !boss.dead) {
+                         boss.health = 0; // Boss sofort töten
+                    } else {
+                        triggerVictory(); // Wenn kein Boss oder Boss tot -> Win
+                    }
+                }
                 if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { e.preventDefault(); }
             });
             window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = false; else if(keys.hasOwnProperty(k)) keys[k] = false; });

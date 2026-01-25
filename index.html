@@ -612,10 +612,17 @@
                 }
 
                 let dx = 0; let dy = 0;
-                if (keys.ArrowRight || keys.d || joystickVector.x > 0.2) dx = 1;
-                if (keys.ArrowLeft || keys.a || joystickVector.x < -0.2) dx = -1;
-                if (keys.ArrowUp || keys.w || joystickVector.y < -0.2) dy = -1;
-                if (keys.ArrowDown || keys.s || joystickVector.y > 0.2) dy = 1;
+                
+                // Keyboard Inputs (Digital - 100% Speed)
+                if (keys.ArrowRight || keys.d) dx = 1;
+                else if (keys.ArrowLeft || keys.a) dx = -1;
+                
+                if (keys.ArrowUp || keys.w) dy = -1;
+                else if (keys.ArrowDown || keys.s) dy = 1;
+
+                // Joystick Inputs (Analog - Smoother & max 80% speed for better control)
+                if (dx === 0 && Math.abs(joystickVector.x) > 0.05) dx = joystickVector.x * 0.8;
+                if (dy === 0 && Math.abs(joystickVector.y) > 0.05) dy = joystickVector.y * 0.8;
 
                 let isSprinting = (keys.Shift || isTouchingSprint);
                 let chiliActive = this.chiliTimer > 0;
@@ -952,7 +959,22 @@
             if('ontouchstart' in window) {
                 mobileControls.style.display = 'flex'; document.getElementById('desktop-hints').style.display = 'none';
                 joystickArea.addEventListener('touchstart', e => { e.preventDefault(); isTouchingJoystick = true; touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY; }, {passive: false});
-                joystickArea.addEventListener('touchmove', e => { e.preventDefault(); if(!isTouchingJoystick) return; let dx = e.touches[0].clientX - touchStart.x; let dy = e.touches[0].clientY - touchStart.y; let dist = Math.min(Math.hypot(dx, dy), 50); let angle = Math.atan2(dy, dx); joystickVector.x = (dx / 50); joystickVector.y = (dy / 50); stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`; }, {passive: false});
+                
+                joystickArea.addEventListener('touchmove', e => { 
+                    e.preventDefault(); 
+                    if(!isTouchingJoystick) return; 
+                    let rawDx = e.touches[0].clientX - touchStart.x; 
+                    let rawDy = e.touches[0].clientY - touchStart.y; 
+                    let dist = Math.min(Math.hypot(rawDx, rawDy), 50); 
+                    let angle = Math.atan2(rawDy, rawDx); 
+                    
+                    // Analog values clamped to circle (-1 to 1)
+                    joystickVector.x = (Math.cos(angle) * dist) / 50; 
+                    joystickVector.y = (Math.sin(angle) * dist) / 50; 
+                    
+                    stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`; 
+                }, {passive: false});
+
                 joystickArea.addEventListener('touchend', (e) => { e.preventDefault(); isTouchingJoystick = false; joystickVector = {x:0, y:0}; stick.style.transform = `translate(0px, 0px)`; });
                 btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); keys[" "] = true; }); btnAttack.addEventListener('touchend', (e) => { e.preventDefault(); keys[" "] = false; });
                 btnSprint.addEventListener('touchstart', (e) => { e.preventDefault(); isTouchingSprint = true; }); btnSprint.addEventListener('touchend', (e) => { e.preventDefault(); isTouchingSprint = false; });

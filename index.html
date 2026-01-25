@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4488ff">
     <link rel="manifest" href="manifest.json">
-    <title>Der blaue Krake - Boss Update</title>
+    <title>Der blaue Krake - Highscore Edition</title>
     <!-- Favicon fallback -->
 	<link rel="icon" type="image/png" href="icon-192x192.png">
     <style>
@@ -39,7 +39,7 @@
         @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-50px) scale(1.5); opacity: 0; } }
 
         /* Screens */
-        #menu-screen, #level-screen, #legend-screen, #shop-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 20, 40, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; text-align: center; }
+        #menu-screen, #level-screen, #legend-screen, #shop-screen, #highscore-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 20, 40, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; text-align: center; }
         h1 { font-size: 48px; margin-bottom: 10px; color: #aaffff; text-shadow: 0 0 20px #00ffff; }
         h2 { font-size: 32px; color: gold; margin-bottom: 20px; }
         h3 { font-size: 24px; color: #aaffff; margin: 15px 0 10px 0; border-bottom: 2px solid #aaffff; display: inline-block; padding-bottom: 5px; }
@@ -57,6 +57,15 @@
         .settings-group label { display: flex; align-items: center; gap: 8px; font-size: 18px; cursor: pointer; color: #aaffff; }
         .settings-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
 
+        /* Highscore Styles */
+        .highscore-container { display: flex; gap: 30px; width: 90%; max-width: 800px; justify-content: center; flex-wrap: wrap; }
+        .highscore-column { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border: 2px solid #4488ff; min-width: 250px; flex: 1; }
+        .highscore-column h3 { color: #ffd700; margin-top: 0; border-bottom: 1px solid #666; padding-bottom: 10px; }
+        .hs-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: 'Courier New', monospace; font-size: 18px; color: #fff; }
+        .hs-rank { color: #88aaff; font-weight: bold; margin-right: 10px; }
+        .hs-score { color: #ffaa00; font-weight: bold; }
+        .hs-date { font-size: 12px; color: #aaa; align-self: center; }
+
         /* Icons */
         .legend-grid { display: grid; grid-template-columns: 1fr; gap: 15px; text-align: left; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); max-width: 400px; width: 90%; max-height: 60vh; overflow-y: auto; }
         .legend-item { display: flex; align-items: center; gap: 15px; }
@@ -64,14 +73,10 @@
         .legend-icon { width: 30px; height: 30px; border-radius: 0; }
         
         .shield-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,22 C12,22 20,18 20,12 C20,9 18,5 12,2 C6,5 4,9 4,12 C4,18 12,22 12,22 Z" fill="%23cc99ff" stroke="white" stroke-width="1"/><circle cx="12" cy="14" r="5" fill="white" stroke="%23aa00ff" stroke-width="1"/></svg>') no-repeat center; }
-        
         .magnet-icon { width:30px; height:30px; background: #ffdd00; border: 2px solid #fff; border-radius: 50%; position: relative; }
         .magnet-icon::after { content: 'U'; color: red; font-weight: bold; position: absolute; top: 5px; left: 9px; font-family: sans-serif; }
-        
         .potion-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2 L12,6 L7,10 L7,22 L17,22 L17,10 L12,6" fill="%23aa00ff" stroke="white" stroke-width="1"/><circle cx="10" cy="18" r="1.5" fill="rgba(255,255,255,0.5)"/><circle cx="14" cy="14" r="2" fill="rgba(255,255,255,0.5)"/></svg>') no-repeat center; }
-        
         .chili-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,2 Z" fill="%23ffff00" stroke="%23ffaa00" stroke-width="1"/></svg>') no-repeat center; }
-        
         .health-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z" fill="red" stroke="white" stroke-width="1"/><path d="M7,6 Q9,6 10,8" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/></svg>') no-repeat center; }
 
         /* Shop */
@@ -176,6 +181,22 @@
         <button id="shop-back-btn" class="secondary-btn">Zurück zum Menü</button>
     </div>
 
+    <!-- HIGHSCORE SCREEN -->
+    <div id="highscore-screen" style="display:none;">
+        <h2>🏆 Bestenliste 🏆</h2>
+        <div class="highscore-container">
+            <div class="highscore-column">
+                <h3>Story Modus</h3>
+                <div id="hs-list-story"></div>
+            </div>
+            <div class="highscore-column">
+                <h3>Endlos Modus</h3>
+                <div id="hs-list-endless"></div>
+            </div>
+        </div>
+        <button id="hs-back-btn" class="secondary-btn">Zurück zum Menü</button>
+    </div>
+
     <div id="menu-screen">
         <h1>Das Krakenspiel</h1>
         <p>Wähle deine Farbe:</p>
@@ -191,6 +212,7 @@
         <button id="endless-btn">Endlos-Modus ♾️</button>
         <div class="menu-btn-container">
             <button id="shop-btn" class="secondary-btn">Shop 🛒</button>
+            <button id="highscore-btn" class="secondary-btn">Bestenliste 🏆</button>
             <button id="legend-btn" class="secondary-btn">Hilfe ❓</button>
         </div>
         <button id="reset-btn" class="secondary-btn" style="color: #ff4444; border-color: #ff4444; margin-top: 20px; font-size: 14px; padding: 5px 15px; background: rgba(0,0,0,0.3);">Reset 🗑️</button>
@@ -224,7 +246,7 @@
 
         let musicInterval = null;
         function playBackgroundMusic() {
-            if (!settings.music || gameState === 'MENU' || gameState === 'LEGEND' || gameState === 'SHOP') return;
+            if (!settings.music || gameState === 'MENU' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE') return;
             if (musicInterval) return; 
             const chords = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66], [130.81, 164.81, 196]];
             let chordIndex = 0;
@@ -284,15 +306,20 @@
         const levelScreen = document.getElementById('level-screen');
         const legendScreen = document.getElementById('legend-screen');
         const shopScreen = document.getElementById('shop-screen');
+        const highscoreScreen = document.getElementById('highscore-screen');
+        
         const startBtn = document.getElementById('start-btn');
         const endlessBtn = document.getElementById('endless-btn');
         const legendBtn = document.getElementById('legend-btn');
         const backBtn = document.getElementById('back-btn');
         const shopBtn = document.getElementById('shop-btn');
         const shopBackBtn = document.getElementById('shop-back-btn');
+        const highscoreBtn = document.getElementById('highscore-btn');
+        const hsBackBtn = document.getElementById('hs-back-btn');
         const nextLevelBtn = document.getElementById('next-level-btn');
         const levelShopBtn = document.getElementById('level-shop-btn');
         const resetBtn = document.getElementById('reset-btn');
+        
         const healthFill = document.getElementById('health-fill');
         const energyFill = document.getElementById('energy-fill');
         const levelIndicator = document.getElementById('level-indicator');
@@ -311,7 +338,17 @@
         const bossHealthFill = document.getElementById('boss-health-fill');
 
         let previousGameState = 'MENU';
-        let playerData = { coins: 0, skins: ['default'], activeSkin: 'default', upgrades: { thick_skin: false, ink_tank: false }, deathCount: 0 };
+        let playerData = { 
+            coins: 0, 
+            skins: ['default'], 
+            activeSkin: 'default', 
+            upgrades: { thick_skin: false, ink_tank: false }, 
+            deathCount: 0,
+            highscores: {
+                story: [],
+                endless: []
+            }
+        };
         const SHOP_ITEMS = [
             { id: 'pirate', name: 'Piratenhut', type: 'skin', price: 1000, desc: 'Arr! Ein echter Seeräuber-Look.', icon: '🏴‍☠️' },
             { id: 'sunglasses', name: 'Sonnenbrille', type: 'skin', price: 1500, desc: 'Cool bleiben, auch unter Wasser.', icon: '🕶️' },
@@ -320,8 +357,57 @@
             { id: 'ink_tank', name: 'Gr. Tintentank', type: 'upgrade', price: 2500, desc: '+50% mehr Energie.', icon: '🔋' }
         ];
 
-        function loadData() { const saved = localStorage.getItem('krake_data_v1'); if(saved) try { playerData = { ...playerData, ...JSON.parse(saved) }; } catch(e) {} }
+        function loadData() { 
+            const saved = localStorage.getItem('krake_data_v1'); 
+            if(saved) {
+                try { 
+                    let loaded = JSON.parse(saved);
+                    // Ensure new fields exist if loading old save
+                    if (!loaded.highscores) loaded.highscores = { story: [], endless: [] };
+                    playerData = { ...playerData, ...loaded }; 
+                } catch(e) {} 
+            }
+        }
         function saveData() { localStorage.setItem('krake_data_v1', JSON.stringify(playerData)); }
+
+        // --- HIGHSCORE LOGIC ---
+        function updateHighscores(mode, score) {
+            if (!playerData.highscores) playerData.highscores = { story: [], endless: [] };
+            let list = playerData.highscores[mode];
+            
+            // Add new score
+            list.push({ score: Math.floor(score), date: new Date().toLocaleDateString() });
+            
+            // Sort Descending
+            list.sort((a, b) => b.score - a.score);
+            
+            // Keep top 5
+            if (list.length > 5) list.length = 5;
+            
+            saveData();
+        }
+
+        function renderHighscores() {
+            const renderList = (elementId, list) => {
+                const el = document.getElementById(elementId);
+                el.innerHTML = '';
+                if (!list || list.length === 0) {
+                    el.innerHTML = '<div style="color:#aaa; padding:10px;">Noch keine Einträge</div>';
+                    return;
+                }
+                list.forEach((entry, index) => {
+                    el.innerHTML += `
+                        <div class="hs-entry">
+                            <span><span class="hs-rank">#${index+1}</span> <span class="hs-date">${entry.date}</span></span>
+                            <span class="hs-score">${entry.score}</span>
+                        </div>
+                    `;
+                });
+            };
+            
+            renderList('hs-list-story', playerData.highscores.story);
+            renderList('hs-list-endless', playerData.highscores.endless);
+        }
 
         let gameState = 'MENU'; 
         let isEndless = false;
@@ -424,13 +510,12 @@
                 // Hit by Shockwave
                 shockwaves.forEach(s => {
                     let sDist = Math.hypot(s.x - this.x, s.y - this.y);
-                    // Radius detection increased to 100 (from 80) for better hit registration
-                    if (sDist < 100 + s.radius && s.power > 0) {
-                        this.health -= 50; // DAMAGE INCREASED FROM 10 TO 50
+                    if (sDist < 80 + s.radius && s.power > 0) {
+                        this.health -= 10; // Damage per tick/hit
                         playSound('boss_hit');
                         s.power = 0; // Consume shockwave
-                        // Flash effect - RED for visible damage
-                        ctx.fillStyle = 'rgba(255, 50, 50, 0.8)'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 80, 0, Math.PI*2); ctx.fill();
+                        // Flash effect
+                        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 60, 0, Math.PI*2); ctx.fill();
                     }
                 });
 
@@ -506,9 +591,6 @@
                 ctx.rotate(Math.sin(this.wobble) * 0.1);
 
                 // Use SVG Paths for perfect match with Legend
-                // SVG viewbox is typically 24x24. We scale it up and center it.
-                // Translate -12, -12 to center the 0,0 coordinate relative to the icon center
-                
                 if (this.type === 'magnet') {
                     // Keep the cool horseshoe magnet for gameplay as requested previously
                     ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0,0,15, Math.PI, 0); ctx.stroke(); 
@@ -943,14 +1025,7 @@
             loadData(); resize(); window.addEventListener('resize', resize);
             window.addEventListener('keydown', e => { 
                 const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = true; else if(keys.hasOwnProperty(k)) keys[k] = true;
-                if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { 
-                    e.preventDefault(); 
-                    if (boss && !boss.dead) {
-                         boss.health = 0; // Boss sofort töten
-                    } else {
-                        triggerVictory(); // Wenn kein Boss oder Boss tot -> Win
-                    }
-                }
+                if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { e.preventDefault(); if (boss) boss.health = 0; else triggerVictory(); }
                 if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { e.preventDefault(); }
             });
             window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = false; else if(keys.hasOwnProperty(k)) keys[k] = false; });
@@ -967,11 +1042,8 @@
                     let rawDy = e.touches[0].clientY - touchStart.y; 
                     let dist = Math.min(Math.hypot(rawDx, rawDy), 50); 
                     let angle = Math.atan2(rawDy, rawDx); 
-                    
-                    // Analog values clamped to circle (-1 to 1)
                     joystickVector.x = (Math.cos(angle) * dist) / 50; 
                     joystickVector.y = (Math.sin(angle) * dist) / 50; 
-                    
                     stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`; 
                 }, {passive: false});
 
@@ -982,8 +1054,18 @@
             startBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = false; playBackgroundMusic(); startGame(); });
             endlessBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = true; playBackgroundMusic(); startGame(); });
             resetBtn.addEventListener('click', () => { if(confirm("Bist du sicher? Dein gesamter Fortschritt (Münzen, Skins, Upgrades) wird gelöscht.")) { localStorage.removeItem('krake_data_v1'); location.reload(); } });
+            
             legendBtn.addEventListener('click', () => { menuScreen.style.display = 'none'; legendScreen.style.display = 'flex'; gameState = 'LEGEND'; });
+            highscoreBtn.addEventListener('click', () => { 
+                menuScreen.style.display = 'none'; 
+                highscoreScreen.style.display = 'flex'; 
+                gameState = 'HIGHSCORE'; 
+                renderHighscores(); 
+            });
+
             backBtn.addEventListener('click', () => { legendScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
+            hsBackBtn.addEventListener('click', () => { highscoreScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
+
             shopBtn.addEventListener('click', () => openShop('MENU')); levelShopBtn.addEventListener('click', () => openShop('LEVEL_END'));
             shopBackBtn.addEventListener('click', () => { shopScreen.style.display = 'none'; if (previousGameState === 'LEVEL_END') { levelScreen.style.display = 'flex'; gameState = 'LEVEL_END'; } else { menuScreen.style.display = 'flex'; gameState = 'MENU'; } });
             nextLevelBtn.addEventListener('click', startNextLevel);
@@ -999,12 +1081,26 @@
             gameState = 'VICTORY_ANIMATION'; 
             let bonus = isEndless ? Math.floor(score/2) : Math.floor(timeLeft)*10;
             let earned = score + bonus;
+            
+            // Update Highscore
+            if (isEndless) {
+                // Highscore update happens in gameOver for Endless, unless we want milestone victories?
+                // Actually endless never ends with victory.
+            } else {
+                // Story Victory
+                // If it is the last level, save story highscore
+                if (currentLevelIndex >= LEVELS.length - 1) {
+                     updateHighscores('story', earned);
+                }
+            }
+            
             playerData.coins += earned;
             saveData();
             setTimeout(() => { 
                 gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; 
                 let title = document.getElementById('level-title'); let desc = document.getElementById('level-desc'); let info = document.getElementById('level-score-info'); 
                 if (isEndless) {
+                     // This block might not be reachable in current logic for endless victory
                      title.innerText = "Endlos-Lauf Beendet!";
                      info.innerText = `Gesamt Score: ${score} | Münzen: ${earned}`;
                      desc.innerText = "Wie weit kommst du beim nächsten Mal?";
@@ -1017,14 +1113,23 @@
         }
         
         function gameOver(reason) { 
-            gameState = 'GAMEOVER'; playerData.coins += score; playerData.deathCount = (playerData.deathCount || 0) + 1; saveData();
+            gameState = 'GAMEOVER'; 
+            
+            // Check Highscore
+            let mode = isEndless ? 'endless' : 'story';
+            // Only update Story score on game over if user wants partial scores?
+            // Usually Story highscore is only for completion. 
+            // But let's allow saving the score if it's decent.
+            updateHighscores(mode, score);
+            
+            playerData.coins += score; playerData.deathCount = (playerData.deathCount || 0) + 1; saveData();
             menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
             h1.innerText = "Besiegt!"; p.innerText = (reason === 'TIME') ? `Die Zeit ist abgelaufen! Score: ${score}` : `Der Ozean war zu wild. Score: ${score}`; h1.style.color = "#ff4444"; 
             startBtn.innerText = "Neustart"; playSound('lose'); stopBackgroundMusic(); 
         }
 
         function update() {
-            if (gameState === 'MENU' || gameState === 'LEVEL_END' || gameState === 'GAMEOVER' || gameState === 'LEGEND' || gameState === 'SHOP') return;
+            if (gameState === 'MENU' || gameState === 'LEVEL_END' || gameState === 'GAMEOVER' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE') return;
             if (gameState === 'PLAYING') { if(!isEndless) { timeLeft -= 1/60; if (timeLeft <= 0) { timeLeft = 0; gameOver('TIME'); } } else { timeLeft += 1/60; } }
             if(!player) player = new Player();
             player.update();
@@ -1055,7 +1160,7 @@
 
         function draw() {
             ctx.clearRect(0, 0, width, height); drawBackground(); drawFarDecor(); lightRays.forEach(r => r.draw()); drawDecor();
-            if (gameState !== 'MENU' && gameState !== 'LEGEND' && gameState !== 'SHOP') { 
+            if (gameState !== 'MENU' && gameState !== 'LEGEND' && gameState !== 'SHOP' && gameState !== 'HIGHSCORE') { 
                 obstacles.forEach(o => o.draw()); 
                 if (boss) boss.draw();
                 if (goal) goal.draw(); 

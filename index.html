@@ -39,7 +39,7 @@
         @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-50px) scale(1.5); opacity: 0; } }
 
         /* Screens */
-        #menu-screen, #level-screen, #legend-screen, #shop-screen, #highscore-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 20, 40, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; text-align: center; }
+        #menu-screen, #level-screen, #legend-screen, #shop-screen, #highscore-screen, #name-input-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 20, 40, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; text-align: center; }
         h1 { font-size: 48px; margin-bottom: 10px; color: #aaffff; text-shadow: 0 0 20px #00ffff; }
         h2 { font-size: 32px; color: gold; margin-bottom: 20px; }
         h3 { font-size: 24px; color: #aaffff; margin: 15px 0 10px 0; border-bottom: 2px solid #aaffff; display: inline-block; padding-bottom: 5px; }
@@ -57,14 +57,20 @@
         .settings-group label { display: flex; align-items: center; gap: 8px; font-size: 18px; cursor: pointer; color: #aaffff; }
         .settings-group input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
 
+        /* Name Input Styles */
+        #player-name-input { font-size: 24px; padding: 10px; border-radius: 10px; border: 2px solid #4488ff; background: rgba(0,0,0,0.5); color: white; text-align: center; margin-top: 15px; width: 80%; max-width: 300px; font-family: 'Segoe UI', sans-serif; }
+        #player-name-input:focus { outline: none; border-color: #ffd700; box-shadow: 0 0 10px #ffd700; }
+
         /* Highscore Styles */
-        .highscore-container { display: flex; gap: 30px; width: 90%; max-width: 800px; justify-content: center; flex-wrap: wrap; }
-        .highscore-column { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border: 2px solid #4488ff; min-width: 250px; flex: 1; }
+        .highscore-container { display: flex; gap: 30px; width: 90%; max-width: 800px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .highscore-column { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 15px; border: 2px solid #4488ff; min-width: 280px; flex: 1; }
         .highscore-column h3 { color: #ffd700; margin-top: 0; border-bottom: 1px solid #666; padding-bottom: 10px; }
-        .hs-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: 'Courier New', monospace; font-size: 18px; color: #fff; }
-        .hs-rank { color: #88aaff; font-weight: bold; margin-right: 10px; }
+        .hs-entry { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-family: 'Segoe UI', sans-serif; font-size: 16px; color: #fff; }
+        .hs-left { display: flex; align-items: center; gap: 10px; }
+        .hs-rank { color: #88aaff; font-weight: bold; width: 25px; }
+        .hs-name { color: white; font-weight: bold; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .hs-score { color: #ffaa00; font-weight: bold; }
-        .hs-date { font-size: 12px; color: #aaa; align-self: center; }
+        .hs-date { font-size: 11px; color: #aaa; margin-top: 2px; }
 
         /* Icons */
         .legend-grid { display: grid; grid-template-columns: 1fr; gap: 15px; text-align: left; background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.2); max-width: 400px; width: 90%; max-height: 60vh; overflow-y: auto; }
@@ -104,6 +110,13 @@
         
         /* Endless Mode Button */
         #endless-btn { background: linear-gradient(to bottom, #aa00ff, #5500aa); border-color: #ddaaff; font-size: 18px; padding: 10px 30px; margin-top: 15px; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 { font-size: 32px; }
+            button { font-size: 18px; padding: 10px 30px; }
+            .highscore-column { min-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -181,6 +194,15 @@
         <button id="shop-back-btn" class="secondary-btn">Zurück zum Menü</button>
     </div>
 
+    <!-- NEW NAME INPUT SCREEN -->
+    <div id="name-input-screen" style="display:none;">
+        <h2>Neuer Rekord! 🎉</h2>
+        <p>Du hast es in die Top 5 geschafft!</p>
+        <p id="new-record-score" style="color: #ffaa00; font-weight: bold; font-size: 24px;">Score: 0</p>
+        <input type="text" id="player-name-input" maxlength="10" placeholder="Dein Name" value="Krake">
+        <button id="submit-name-btn" style="margin-top: 30px;">Speichern</button>
+    </div>
+
     <!-- HIGHSCORE SCREEN -->
     <div id="highscore-screen" style="display:none;">
         <h2>🏆 Bestenliste 🏆</h2>
@@ -246,7 +268,7 @@
 
         let musicInterval = null;
         function playBackgroundMusic() {
-            if (!settings.music || gameState === 'MENU' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE') return;
+            if (!settings.music || gameState === 'MENU' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE' || gameState === 'NAME_INPUT') return;
             if (musicInterval) return; 
             const chords = [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66], [130.81, 164.81, 196]];
             let chordIndex = 0;
@@ -307,6 +329,7 @@
         const legendScreen = document.getElementById('legend-screen');
         const shopScreen = document.getElementById('shop-screen');
         const highscoreScreen = document.getElementById('highscore-screen');
+        const nameInputScreen = document.getElementById('name-input-screen');
         
         const startBtn = document.getElementById('start-btn');
         const endlessBtn = document.getElementById('endless-btn');
@@ -319,6 +342,8 @@
         const nextLevelBtn = document.getElementById('next-level-btn');
         const levelShopBtn = document.getElementById('level-shop-btn');
         const resetBtn = document.getElementById('reset-btn');
+        const submitNameBtn = document.getElementById('submit-name-btn');
+        const playerNameInput = document.getElementById('player-name-input');
         
         const healthFill = document.getElementById('health-fill');
         const energyFill = document.getElementById('energy-fill');
@@ -338,6 +363,9 @@
         const bossHealthFill = document.getElementById('boss-health-fill');
 
         let previousGameState = 'MENU';
+        // Temporary storage for highscore flow
+        let pendingScore = { score: 0, mode: '' };
+        
         let playerData = { 
             coins: 0, 
             skins: ['default'], 
@@ -371,12 +399,23 @@
         function saveData() { localStorage.setItem('krake_data_v1', JSON.stringify(playerData)); }
 
         // --- HIGHSCORE LOGIC ---
-        function updateHighscores(mode, score) {
+        function isHighscore(mode, score) {
+            if (!playerData.highscores) playerData.highscores = { story: [], endless: [] };
+            let list = playerData.highscores[mode];
+            if (list.length < 5) return true;
+            return score > list[list.length - 1].score;
+        }
+
+        function saveHighscore(mode, score, name) {
             if (!playerData.highscores) playerData.highscores = { story: [], endless: [] };
             let list = playerData.highscores[mode];
             
             // Add new score
-            list.push({ score: Math.floor(score), date: new Date().toLocaleDateString() });
+            list.push({ 
+                score: Math.floor(score), 
+                date: new Date().toLocaleDateString(),
+                name: name || "Krake"
+            });
             
             // Sort Descending
             list.sort((a, b) => b.score - a.score);
@@ -396,9 +435,16 @@
                     return;
                 }
                 list.forEach((entry, index) => {
+                    let name = entry.name ? entry.name : "Krake";
                     el.innerHTML += `
                         <div class="hs-entry">
-                            <span><span class="hs-rank">#${index+1}</span> <span class="hs-date">${entry.date}</span></span>
+                            <div class="hs-left">
+                                <span class="hs-rank">#${index+1}</span> 
+                                <div>
+                                    <div class="hs-name">${name}</div>
+                                    <div class="hs-date">${entry.date}</div>
+                                </div>
+                            </div>
                             <span class="hs-score">${entry.score}</span>
                         </div>
                     `;
@@ -1026,7 +1072,10 @@
             window.addEventListener('keydown', e => { 
                 const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = true; else if(keys.hasOwnProperty(k)) keys[k] = true;
                 if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { e.preventDefault(); if (boss) boss.health = 0; else triggerVictory(); }
-                if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { e.preventDefault(); }
+                if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { 
+                    // Don't prevent default if we are typing name
+                    if (gameState !== 'NAME_INPUT') e.preventDefault(); 
+                }
             });
             window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = false; else if(keys.hasOwnProperty(k)) keys[k] = false; });
             window.addEventListener('mousedown', () => mouse.clicked = true); window.addEventListener('mouseup', () => mouse.clicked = false);
@@ -1065,6 +1114,31 @@
 
             backBtn.addEventListener('click', () => { legendScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
             hsBackBtn.addEventListener('click', () => { highscoreScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
+            
+            // Name Submit
+            submitNameBtn.addEventListener('click', () => {
+                let name = playerNameInput.value.trim().substring(0, 10) || "Krake";
+                saveHighscore(pendingScore.mode, pendingScore.score, name);
+                nameInputScreen.style.display = 'none';
+                
+                // After submitting, where do we go? 
+                // Either Level screen (if won) or Menu (if dead).
+                // Actually if we just beat highscore on death, we go to Game Over screen logic
+                if (pendingScore.reason === 'VICTORY' && !isEndless) {
+                    // Was victory
+                    // Continue with Victory logic
+                     gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; 
+                     let title = document.getElementById('level-title'); let desc = document.getElementById('level-desc'); let info = document.getElementById('level-score-info'); 
+                     info.innerText = `Score: ${pendingScore.score} | Gesamt: ${playerData.coins} Münzen`; 
+                     title.innerText = "Schatz Gefunden!"; title.style.color = "#ffd700"; desc.innerText = "Du bist der reichste Krake im Ozean!"; 
+                } else {
+                    // Was death or endless end
+                    menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
+                    h1.innerText = "Besiegt!"; p.innerText = `Neuer Rekord! Score: ${pendingScore.score}`; h1.style.color = "#ff4444"; 
+                    startBtn.innerText = "Neustart";
+                    gameState = 'MENU';
+                }
+            });
 
             shopBtn.addEventListener('click', () => openShop('MENU')); levelShopBtn.addEventListener('click', () => openShop('LEVEL_END'));
             shopBackBtn.addEventListener('click', () => { shopScreen.style.display = 'none'; if (previousGameState === 'LEVEL_END') { levelScreen.style.display = 'flex'; gameState = 'LEVEL_END'; } else { menuScreen.style.display = 'flex'; gameState = 'MENU'; } });
@@ -1081,26 +1155,38 @@
             gameState = 'VICTORY_ANIMATION'; 
             let bonus = isEndless ? Math.floor(score/2) : Math.floor(timeLeft)*10;
             let earned = score + bonus;
-            
-            // Update Highscore
-            if (isEndless) {
-                // Highscore update happens in gameOver for Endless, unless we want milestone victories?
-                // Actually endless never ends with victory.
-            } else {
-                // Story Victory
-                // If it is the last level, save story highscore
-                if (currentLevelIndex >= LEVELS.length - 1) {
-                     updateHighscores('story', earned);
-                }
-            }
+            let totalScore = earned; // In story mode we basically use score + time as "score" for simplicity in HS? No, keep it simple. Score is points.
             
             playerData.coins += earned;
             saveData();
+
+            // Check Highscore
+            let mode = isEndless ? 'endless' : 'story';
+            let finalScore = score + bonus; // Let's include time bonus in highscore for story
+            
+            if (isEndless) {
+                 // Endless doesn't really have a victory condition except giving up?
+            } else {
+                // Story Victory
+                if (currentLevelIndex >= LEVELS.length - 1) {
+                     // Check if highscore
+                     if (isHighscore('story', finalScore)) {
+                        setTimeout(() => {
+                            gameState = 'NAME_INPUT';
+                            pendingScore = { score: finalScore, mode: 'story', reason: 'VICTORY' };
+                            document.getElementById('new-record-score').innerText = `Score: ${finalScore}`;
+                            nameInputScreen.style.display = 'flex';
+                            playSound('win');
+                        }, 4000);
+                        return; // Stop flow here, wait for input
+                     }
+                }
+            }
+
             setTimeout(() => { 
                 gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; 
                 let title = document.getElementById('level-title'); let desc = document.getElementById('level-desc'); let info = document.getElementById('level-score-info'); 
                 if (isEndless) {
-                     // This block might not be reachable in current logic for endless victory
                      title.innerText = "Endlos-Lauf Beendet!";
                      info.innerText = `Gesamt Score: ${score} | Münzen: ${earned}`;
                      desc.innerText = "Wie weit kommst du beim nächsten Mal?";
@@ -1114,22 +1200,27 @@
         
         function gameOver(reason) { 
             gameState = 'GAMEOVER'; 
-            
-            // Check Highscore
             let mode = isEndless ? 'endless' : 'story';
-            // Only update Story score on game over if user wants partial scores?
-            // Usually Story highscore is only for completion. 
-            // But let's allow saving the score if it's decent.
-            updateHighscores(mode, score);
+            
+            if (isHighscore(mode, score)) {
+                pendingScore = { score: score, mode: mode, reason: 'DEATH' };
+                document.getElementById('new-record-score').innerText = `Score: ${score}`;
+                nameInputScreen.style.display = 'flex';
+                gameState = 'NAME_INPUT';
+                playSound('win'); // Happy sound for highscore even if dead
+            } else {
+                // Standard Game Over
+                menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
+                h1.innerText = "Besiegt!"; p.innerText = (reason === 'TIME') ? `Die Zeit ist abgelaufen! Score: ${score}` : `Der Ozean war zu wild. Score: ${score}`; h1.style.color = "#ff4444"; 
+                startBtn.innerText = "Neustart"; playSound('lose'); 
+            }
             
             playerData.coins += score; playerData.deathCount = (playerData.deathCount || 0) + 1; saveData();
-            menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
-            h1.innerText = "Besiegt!"; p.innerText = (reason === 'TIME') ? `Die Zeit ist abgelaufen! Score: ${score}` : `Der Ozean war zu wild. Score: ${score}`; h1.style.color = "#ff4444"; 
-            startBtn.innerText = "Neustart"; playSound('lose'); stopBackgroundMusic(); 
+            stopBackgroundMusic(); 
         }
 
         function update() {
-            if (gameState === 'MENU' || gameState === 'LEVEL_END' || gameState === 'GAMEOVER' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE') return;
+            if (gameState === 'MENU' || gameState === 'LEVEL_END' || gameState === 'GAMEOVER' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE' || gameState === 'NAME_INPUT') return;
             if (gameState === 'PLAYING') { if(!isEndless) { timeLeft -= 1/60; if (timeLeft <= 0) { timeLeft = 0; gameOver('TIME'); } } else { timeLeft += 1/60; } }
             if(!player) player = new Player();
             player.update();
@@ -1160,7 +1251,7 @@
 
         function draw() {
             ctx.clearRect(0, 0, width, height); drawBackground(); drawFarDecor(); lightRays.forEach(r => r.draw()); drawDecor();
-            if (gameState !== 'MENU' && gameState !== 'LEGEND' && gameState !== 'SHOP' && gameState !== 'HIGHSCORE') { 
+            if (gameState !== 'MENU' && gameState !== 'LEGEND' && gameState !== 'SHOP' && gameState !== 'HIGHSCORE' && gameState !== 'NAME_INPUT') { 
                 obstacles.forEach(o => o.draw()); 
                 if (boss) boss.draw();
                 if (goal) goal.draw(); 

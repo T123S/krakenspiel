@@ -1226,7 +1226,33 @@
             loadData(); resize(); window.addEventListener('resize', resize);
             window.addEventListener('keydown', e => { 
                 const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = true; else if(keys.hasOwnProperty(k)) keys[k] = true;
+                
+                // Cheat: Alt + N for Level Skip
                 if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { e.preventDefault(); if (boss) boss.health = 0; else triggerVictory(); }
+                
+                // Cheat: Alt + M for Money (10.000 Coins)
+                if (e.altKey && e.code === 'KeyM') { 
+                    e.preventDefault();
+                    playerData.coins += 10000; 
+                    saveData(); 
+                    playSound('buy'); 
+                    
+                    // Visual Feedback
+                    if (gameState === 'SHOP') {
+                        renderShop(); // Refresh shop UI immediately
+                    } else if (gameState === 'PLAYING' && player) {
+                         showFloatingText("+10.000 MÜNZEN!", player.x, player.y - 50);
+                    } else {
+                        // In Menu
+                         const el = document.createElement('div'); 
+                         el.innerText = "+10.000 MÜNZEN!"; 
+                         el.style.position = 'absolute'; el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%, -50%)';
+                         el.style.color = 'gold'; el.style.fontSize = '30px'; el.style.fontWeight = 'bold'; el.style.textShadow = '0 0 10px black'; el.style.zIndex = '100';
+                         document.body.appendChild(el);
+                         setTimeout(() => el.remove(), 1500);
+                    }
+                }
+
                 if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { 
                     // Don't prevent default if we are typing name
                     if (gameState !== 'NAME_INPUT') e.preventDefault(); 

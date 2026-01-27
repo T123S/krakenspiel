@@ -465,245 +465,41 @@
         let touchStart = { x: 0, y: 0 }; let isTouchingJoystick = false; let joystickVector = { x: 0, y: 0 }; let isTouchingSprint = false;
 
         // --- CLASSES ---
-        class Pet {
-            constructor(type) {
-                this.type = type;
-                this.x = 0; this.y = 0;
-                this.angle = 0;
-                this.timer = 0;
-                this.abilityUsed = false; // For turtle (once per level)
-                this.facingRight = true;
-            }
-            update(player) {
-                // Determine direction based on player movement
-                // If player moves right (vx > 0), "behind" is Left (-1)
-                // If player moves left (vx < 0), "behind" is Right (+1)
-                // Default to Left (-1) if standing still and previously facing right
-                
-                if (player.vx > 0.1) this.facingRight = true;
-                else if (player.vx < -0.1) this.facingRight = false;
-
-                let offsetDir = this.facingRight ? -1 : 1;
-                
-                // Target Position (Behind player)
-                let targetX = player.x + (offsetDir * 90); // Distance 90px behind
-                let targetY = player.y;
-
-                if (this.type === 'pet_fish') {
-                    // Goldfish Logic: Swim up and down to collect coins
-                    // Amplitude of 80px (covers more height), Speed based on frames
-                    // Sync Y with player Y but add wave
-                    targetY = player.y + Math.sin(frames * 0.08) * 80;
-                    
-                    // Coin Collection Logic
-                    coins.forEach(coin => {
-                        if (!coin.collected) {
-                            let dist = Math.hypot(this.x - coin.x, this.y - coin.y);
-                            if (dist < 50) { // Increased capture radius
-                                coin.collected = true;
-                                playerData.coins++;
-                                score += 10;
-                                playSound('coin');
-                            }
-                        }
-                    });
-                } else {
-                    // Turtle stays close
-                    targetY = player.y - 20;
-                }
-
-                // Smooth movement towards target
-                this.x += (targetX - this.x) * 0.08;
-                this.y += (targetY - this.y) * 0.08;
-                
-                // Tilt based on vertical movement
-                if (this.type === 'pet_fish') {
-                    // Tilt slightly towards movement direction
-                    let tilt = (targetY - this.y) * 0.02;
-                    this.angle = this.facingRight ? tilt : -tilt; 
-                } else {
-                    this.angle = Math.sin(frames * 0.1) * 0.2;
-                }
-            }
-            draw() {
-                let drawX = this.x - cameraX;
-                ctx.save(); ctx.translate(drawX, this.y); ctx.rotate(this.angle);
-                
-                // Flip sprite based on facing direction
-                if (this.facingRight) {
-                     // Standard: Face Right. 
-                     // My drawing logic below draws a fish facing LEFT by default (Eye at -8, Tail at 20).
-                     // So we scale X by -1 to face RIGHT.
-                     ctx.scale(-0.9, 0.9); 
-                } else {
-                     // Face Left.
-                     // Drawing is naturally Left.
-                     ctx.scale(0.9, 0.9);
-                }
-
-                if (this.type === 'pet_fish') {
-                    // Goldfish drawing (Native: Eye Left, Tail Right)
-                    ctx.fillStyle = '#ffaa00'; ctx.beginPath(); ctx.ellipse(0, 0, 15, 10, 0, 0, Math.PI*2); ctx.fill(); // Body
-                    ctx.fillStyle = '#ff8800'; ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(22, -12); ctx.lineTo(22, 12); ctx.fill(); // Tail
-                    ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5, -15); ctx.lineTo(10, -8); ctx.fill(); // Top Fin
-                    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-8, -3, 4, 0, Math.PI*2); ctx.fill(); // Eye
-                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-9, -3, 1.5, 0, Math.PI*2); ctx.fill();
-                    // Scales
-                    ctx.strokeStyle = '#cc6600'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 5, -Math.PI/2, Math.PI/2); ctx.stroke();
-                } else if (this.type === 'pet_turtle') {
-                    // Turtle
-                    // Correct orientation for turtle too
-                    if(this.facingRight) ctx.scale(-1, 1); // Turtle logic might need adjustment if it wasn't symmetric
-                    
-                    ctx.fillStyle = '#228822'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill(); // Shell
-                    ctx.fillStyle = '#44aa44'; ctx.beginPath(); ctx.arc(-12, -5, 6, 0, Math.PI*2); ctx.fill(); // Head (Left side)
-                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-14, -6, 1.5, 0, Math.PI*2); ctx.fill(); // Eye
-                    // Legs
-                    ctx.fillStyle = '#44aa44'; 
-                    ctx.beginPath(); ctx.arc(-5, 12, 4, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(5, 12, 4, 0, Math.PI*2); ctx.fill();
-                    // Shield status
-                    if (!this.abilityUsed) {
-                        ctx.strokeStyle = 'rgba(100, 255, 100, 0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0, 20, 0, Math.PI*2); ctx.stroke();
-                    }
-                }
-                ctx.restore();
-            }
-        }
-
-        class Coin {
-            constructor(x, y) {
-                this.x = x; this.y = y; this.radius = 8; this.wobble = Math.random() * Math.PI * 2; this.collected = false;
-            }
-            update() {
-                this.wobble += 0.1;
-                // Magnet logic
-                if (player && player.magnetTimer > 0 && !this.collected) {
-                    let dist = Math.hypot(player.x - this.x, player.y - this.y);
-                    if (dist < 300) {
-                        this.x += (player.x - this.x) * 0.1;
-                        this.y += (player.y - this.y) * 0.1;
-                    }
-                }
-                
-                let dist = Math.hypot(player.x - this.x, player.y - this.y);
-                if (dist < player.radius + this.radius && !this.collected) {
-                    this.collected = true;
-                    playerData.coins++;
-                    score += 10;
-                    playSound('coin');
-                }
-            }
-            draw() {
-                if (this.collected) return;
-                let drawX = this.x - cameraX;
-                if (drawX < -20 || drawX > width + 20) return;
-                let widthScale = Math.abs(Math.sin(this.wobble));
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath(); ctx.ellipse(drawX, this.y, this.radius * widthScale, this.radius, 0, 0, Math.PI*2); ctx.fill();
-                ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1; ctx.stroke();
-            }
-        }
-
-        class Boss {
-            constructor(x, y, type) {
-                this.x = x; this.y = y; this.type = type;
-                this.maxHealth = (type === 'sub') ? 300 : 500;
-                this.health = this.maxHealth;
-                this.dead = false;
-                this.angle = 0;
-                this.attackTimer = 0;
-                this.name = (type === 'sub') ? 'U-BOOT "IRON CLAW"' : 'URZEIT-LEVIATHAN';
-                bossUi.style.display = 'flex';
-                bossName.innerText = this.name;
-                this.vy = 2;
-            }
-            update() {
-                if (this.dead) return;
-                
-                // Movement
-                this.y += this.vy;
-                if (this.y < 100 || this.y > height - 100) this.vy *= -1;
-                
-                // Interaction with Player
-                let dist = Math.hypot(player.x - this.x, player.y - this.y);
-                
-                // Collision damage to player
-                if (dist < 60 + player.radius) {
-                    if (player.hitCooldown <= 0 && player.shieldTimer <= 0) {
-                        player.takeDamage(20); // Use method
-                        player.vx = -20;
-                    }
-                }
-
-                // Hit by Shockwave
-                shockwaves.forEach(s => {
-                    let sDist = Math.hypot(s.x - this.x, s.y - this.y);
-                    if (sDist < 80 + s.radius && s.power > 0) {
-                        this.health -= 10; // Damage per tick/hit
-                        playSound('boss_hit');
-                        s.power = 0; // Consume shockwave
-                        // Flash effect
-                        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 60, 0, Math.PI*2); ctx.fill();
-                    }
-                });
-
-                bossHealthFill.style.width = (this.health / this.maxHealth * 100) + "%";
-
-                if (this.health <= 0) {
-                    this.dead = true;
-                    bossUi.style.display = 'none';
-                    score += 5000;
-                    showFloatingText("BOSS BESIEGT!", this.x, this.y);
-                    // Spawn Goal
-                    goal = new GoalObject(this.x + 200, height/2, 'chest');
-                    playSound('win');
-                }
-            }
-            draw() {
-                if (this.dead) return;
-                let drawX = this.x - cameraX;
-                ctx.save(); ctx.translate(drawX, this.y);
-                
-                if (this.type === 'sub') {
-                    // Draw U-Boat
-                    ctx.fillStyle = '#444'; ctx.beginPath(); ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#666'; ctx.fillRect(-30, -50, 40, 30); // Tower
-                    ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(0, -5, 10, 0, Math.PI*2); ctx.fill(); // Window
-                    // Propeller
-                    ctx.fillStyle = '#222'; ctx.fillRect(70, -10, 10, 20);
-                    // Claw
-                    let clawY = Math.sin(frames*0.1)*20;
-                    ctx.strokeStyle = '#555'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-50, 10); ctx.lineTo(-100, 30+clawY); ctx.stroke();
-                    ctx.fillStyle = 'silver'; ctx.beginPath(); ctx.arc(-100, 30+clawY, 15, 0, Math.PI*2); ctx.fill();
-                } else {
-                    // Draw Monster
-                    let scale = 1 + Math.sin(frames*0.05)*0.1;
-                    ctx.scale(scale, scale);
-                    ctx.fillStyle = '#2a0a33'; ctx.beginPath(); ctx.arc(0, 0, 70, 0, Math.PI*2); ctx.fill();
-                    // Eyes
-                    ctx.fillStyle = 'red'; 
-                    ctx.beginPath(); ctx.arc(-30, -20, 10, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(-30, 20, 10, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(20, 0, 15, 0, Math.PI*2); ctx.fill();
-                    // Tentacles
-                    ctx.strokeStyle = '#4a0a55'; ctx.lineWidth = 8;
-                    for(let i=0; i<6; i++) {
-                        let a = (i/6)*Math.PI*2 + frames*0.05;
-                        ctx.beginPath(); ctx.moveTo(Math.cos(a)*60, Math.sin(a)*60);
-                        ctx.lineTo(Math.cos(a)*100, Math.sin(a)*100);
-                        ctx.stroke();
-                    }
-                }
-                ctx.restore();
-            }
-        }
 
         class LightRay { constructor() { this.x = Math.random() * width; this.width = Math.random() * 100 + 50; this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2; this.swaySpeed = Math.random() * 0.002 + 0.001; this.swayOffset = Math.random() * Math.PI * 2; } draw() { this.x += Math.sin(frames * this.swaySpeed + this.swayOffset) * 0.5; let pulsingAlpha = 0.5 + Math.sin(frames * 0.02 + this.swayOffset) * 0.2; ctx.save(); ctx.translate(this.x, 0); ctx.rotate(this.angle); let grad = ctx.createLinearGradient(0, 0, 0, height); let col = currentLevel.lightColor; grad.addColorStop(0, col.replace(/[\d\.]+\)$/, pulsingAlpha + ')')); grad.addColorStop(0.7, 'rgba(0,0,0,0)'); ctx.fillStyle = grad; ctx.fillRect(-this.width/2, 0, this.width, height * 1.5); ctx.restore(); } }
         let lightRays = [];
-        class Plankton { constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.size = Math.random() * 2 + 0.5; this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = (Math.random() - 0.5) * 0.5; this.alpha = Math.random() * 0.5 + 0.1; } update() { this.x += this.speedX - (player ? player.vx * 0.1 : 0); this.y += this.speedY; if (this.x < 0) this.x = width; if (this.x > width) this.x = 0; if (this.y < 0) this.y = height; if (this.y > height) this.y = 0; } draw() { ctx.fillStyle = `rgba(200, 255, 255, ${this.alpha})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); } }
-        class Bubble { constructor(x, y, size, isTrail = false) { this.x = x || Math.random() * (currentLevel ? currentLevel.length : width); this.y = y || height + Math.random() * 100; this.size = size || Math.random() * 4 + 2; this.speed = Math.random() * 1 + 0.5; this.wobble = Math.random() * Math.PI * 2; this.isTrail = isTrail; this.life = 1.0; } update() { this.y -= this.speed; this.x += Math.sin(frames * 0.05 + this.wobble) * 0.5; if(this.isTrail) { this.life -= 0.01; this.size *= 0.98; } else { if (this.y < -10) { this.y = height + 10; this.x = cameraX + Math.random() * width; } } } draw() { let drawX = this.x - cameraX; if(drawX < -10 || drawX > width + 10) return; let alpha = this.isTrail ? this.life : 0.4; ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`; ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.25})`; ctx.beginPath(); ctx.arc(drawX, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle = `rgba(255,255,255, ${alpha * 1.5})`; ctx.beginPath(); ctx.arc(drawX - this.size*0.3, this.y - this.size*0.3, this.size*0.2, 0, Math.PI*2); ctx.fill(); } }
+        
+        class Plankton { 
+            constructor() { 
+                this.x = Math.random() * width; 
+                this.y = Math.random() * height; 
+                this.size = Math.random() * 2 + 0.5; 
+                this.speedX = (Math.random() - 0.5) * 0.5; 
+                this.speedY = (Math.random() - 0.5) * 0.5; 
+                this.alpha = Math.random() * 0.5 + 0.3; 
+                // Bunt, aber KEIN Gelb (Gelb ist ca hue 40-70)
+                let hue = Math.random() * 360;
+                if (hue > 35 && hue < 85) hue += 60; // Verschiebe Gelb zu Grün/Cyan
+                this.color = `hsla(${hue}, 80%, 70%, ${this.alpha})`;
+            } 
+            update() { 
+                this.x += this.speedX - (player ? player.vx * 0.1 : 0); 
+                this.y += this.speedY; 
+                if (this.x < 0) this.x = width; 
+                if (this.x > width) this.x = 0; 
+                if (this.y < 0) this.y = height; 
+                if (this.y > height) this.y = 0; 
+            } 
+            draw() { 
+                ctx.fillStyle = this.color; 
+                ctx.beginPath(); 
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); 
+                ctx.fill(); 
+            } 
+        }
 
+        class Bubble { constructor(x, y, size, isTrail = false) { this.x = x || Math.random() * (currentLevel ? currentLevel.length : width); this.y = y || height + Math.random() * 100; this.size = size || Math.random() * 4 + 2; this.speed = Math.random() * 1 + 0.5; this.wobble = Math.random() * Math.PI * 2; this.isTrail = isTrail; this.life = 1.0; } update() { this.y -= this.speed; this.x += Math.sin(frames * 0.05 + this.wobble) * 0.5; if(this.isTrail) { this.life -= 0.01; this.size *= 0.98; } else { if (this.y < -10) { this.y = height + 10; this.x = cameraX + Math.random() * width; } } } draw() { let drawX = this.x - cameraX; if(drawX < -10 || drawX > width + 10) return; let alpha = this.isTrail ? this.life : 0.4; ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`; ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.25})`; ctx.beginPath(); ctx.arc(drawX, this.y, this.size, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.fillStyle = `rgba(255,255,255, ${alpha * 1.5})`; ctx.beginPath(); ctx.arc(drawX - this.size*0.3, this.y - this.size*0.3, this.size*0.2, 0, Math.PI*2); ctx.fill(); } }
+        
         class PowerUp {
             constructor(x, y, type) { this.x = x; this.y = y; this.type = type; this.radius = 18; this.wobble = Math.random() * Math.PI * 2; }
             update() { this.wobble += 0.05; this.y += Math.sin(this.wobble) * 0.5; }
@@ -766,6 +562,265 @@
             }
         }
 
+        class Pet {
+            constructor(type) {
+                this.type = type;
+                this.x = 0; this.y = 0;
+                this.angle = 0;
+                this.timer = 0;
+                this.abilityUsed = false; 
+                this.cooldownTimer = 0; 
+                this.facingRight = true;
+                this.wobble = Math.random() * Math.PI * 2;
+            }
+            update(player) {
+                this.wobble += 0.1;
+                // Determine direction based on player movement
+                if (player.vx > 0.1) this.facingRight = true;
+                else if (player.vx < -0.1) this.facingRight = false;
+
+                let offsetDir = this.facingRight ? -1 : 1;
+                let targetX, targetY;
+                let moveSpeed = 0.08;
+
+                // --- GOLDFISCH LOGIK ---
+                if (this.type === 'pet_fish') {
+                    let closestCoin = null;
+                    let minDist = 400; 
+
+                    coins.forEach(coin => {
+                        if (!coin.collected) {
+                            let distToPlayer = Math.hypot(player.x - coin.x, player.y - coin.y);
+                            if (distToPlayer < minDist) {
+                                minDist = distToPlayer;
+                                closestCoin = coin;
+                            }
+                        }
+                    });
+
+                    if (closestCoin) {
+                        // Schwimm zur Münze (Das Maul muss zur Münze!)
+                        targetX = closestCoin.x;
+                        targetY = closestCoin.y;
+                        moveSpeed = 0.25; 
+                        this.facingRight = (targetX > this.x);
+                    } else {
+                        // RUHEMODUS: Sehr nah am Kraken
+                        let orbit = Math.sin(frames * 0.05) * 15; 
+                        targetX = player.x + (offsetDir * 35); 
+                        targetY = player.y + orbit;
+                        
+                        if (Math.abs(player.vx) > 0.1) this.facingRight = (player.vx > 0);
+                    }
+                    
+                    // Einsammeln
+                    coins.forEach(coin => {
+                        if (!coin.collected) {
+                            // Wichtig: Distanz vom Maul (this.x, this.y) zur Münze
+                            let dist = Math.hypot(this.x - coin.x, this.y - coin.y);
+                            if (dist < 20) { 
+                                coin.collected = true;
+                                playerData.coins++;
+                                score += 10;
+                                playSound('coin');
+                                if(frames % 2 === 0) particles.push(new InkParticle(this.x, this.y, '#ffd700'));
+                            }
+                        }
+                    });
+
+                // --- SCHILDKRÖTEN LOGIK ---
+                } else {
+                    // Position: Panzer klebt am Rücken
+                    targetX = player.x - (offsetDir * 35); 
+                    targetY = player.y;
+                    
+                    if (Math.abs(player.vx) > 0.1) this.facingRight = (player.vx > 0);
+
+                    // Cooldown Management (15 Sekunden)
+                    if (this.abilityUsed) {
+                        this.cooldownTimer++;
+                        if (this.cooldownTimer > 900) { 
+                            this.abilityUsed = false;
+                            this.cooldownTimer = 0;
+                            playSound('powerup');
+                            showFloatingText("SCHILD BEREIT!", player.x, player.y - 50);
+                            shockwaves.push(new Shockwave(this.x, this.y, 0)); 
+                        }
+                    }
+                }
+
+                // Smooth movement
+                this.x += (targetX - this.x) * moveSpeed;
+                this.y += (targetY - this.y) * moveSpeed;
+                this.angle = (targetY - this.y) * 0.02;
+            }
+            
+            draw() {
+                let drawX = this.x - cameraX; if (drawX < -100 || drawX > width + 100) return;
+                ctx.save(); ctx.translate(drawX, this.y);
+                
+                // Flip sprite correctly
+                if (this.facingRight) ctx.scale(-1, 1);
+                
+                let hover = Math.sin(this.wobble) * 3;
+                ctx.translate(0, hover);
+
+                if (this.type === 'pet_fish') {
+                    ctx.rotate(this.angle);
+                    ctx.scale(0.8, 0.8);
+                    
+                    // Zeichne Fisch so, dass (0,0) das MAUL ist.
+                    // Das Maul ist links am Fisch, Körper erstreckt sich nach rechts.
+                    
+                    // Körper (Zentrum nach rechts verschoben)
+                    ctx.fillStyle = '#ffaa00'; ctx.beginPath(); ctx.ellipse(18, 0, 18, 12, 0, 0, Math.PI*2); ctx.fill(); 
+                    // Schwanz (noch weiter rechts)
+                    ctx.fillStyle = '#ff8800'; ctx.beginPath(); ctx.moveTo(28, 0); ctx.lineTo(43, -12); ctx.lineTo(43, 12); ctx.fill();
+                    // Flosse
+                    ctx.beginPath(); ctx.moveTo(18, -10); ctx.lineTo(23, -18); ctx.lineTo(30, -10); ctx.fill();
+                    // Auge (nah am Maul bei 0,0)
+                    ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(10, -4, 5, 0, Math.PI*2); ctx.fill(); 
+                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(8, -4, 2, 0, Math.PI*2); ctx.fill();
+                    
+                    // Schuppen
+                    ctx.strokeStyle = '#cc6600'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(20, 2, 6, -Math.PI/2, Math.PI/2); ctx.stroke();
+                    
+                } else if (this.type === 'pet_turtle') {
+                    // Schildkröte: (0,0) ist die Mitte des Panzers
+                    ctx.rotate(this.angle * 0.5);
+                    ctx.scale(0.8, 0.8);
+                    
+                    let shellColor = this.abilityUsed ? '#555555' : '#228822';
+                    let patternColor = this.abilityUsed ? '#333333' : '#116611';
+
+                    ctx.fillStyle = shellColor; ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = patternColor; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill();
+                    
+                    // Kopf (schaut nach links)
+                    ctx.fillStyle = this.abilityUsed ? '#557755' : '#44aa44'; 
+                    ctx.beginPath(); ctx.arc(-18, -6, 8, 0, Math.PI*2); ctx.fill(); 
+                    ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-20, -7, 2, 0, Math.PI*2); ctx.fill();
+                    
+                    // Beine
+                    ctx.fillStyle = this.abilityUsed ? '#557755' : '#44aa44';
+                    let legWag = Math.sin(this.wobble * 2) * 3;
+                    ctx.beginPath(); ctx.ellipse(-10 + legWag, 14, 6, 8, 0.5, 0, Math.PI*2); ctx.fill(); 
+                    ctx.beginPath(); ctx.ellipse(10 - legWag, 14, 5, 7, -0.5, 0, Math.PI*2); ctx.fill(); 
+                    
+                    // Cooldown Anzeige
+                    if (this.abilityUsed) {
+                         ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                         ctx.lineWidth = 3;
+                         ctx.beginPath();
+                         let angle = (this.cooldownTimer / 900) * Math.PI * 2;
+                         ctx.arc(0, 0, 22, -Math.PI/2, -Math.PI/2 + angle);
+                         ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
+        }
+
+        class Coin {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.radius = 8; this.wobble = Math.random() * Math.PI * 2; this.collected = false;
+            }
+            update() {
+                this.wobble += 0.1;
+                // Magnet logic
+                if (player && player.magnetTimer > 0 && !this.collected) {
+                    let dist = Math.hypot(player.x - this.x, player.y - this.y);
+                    if (dist < 300) {
+                        this.x += (player.x - this.x) * 0.1;
+                        this.y += (player.y - this.y) * 0.1;
+                    }
+                }
+                
+                let dist = Math.hypot(player.x - this.x, player.y - this.y);
+                if (dist < player.radius + this.radius && !this.collected) {
+                    this.collected = true;
+                    playerData.coins++;
+                    score += 10;
+                    playSound('coin');
+                }
+            }
+            draw() {
+                if (this.collected) return;
+                let drawX = this.x - cameraX;
+                if (drawX < -20 || drawX > width + 20) return;
+                let widthScale = Math.abs(Math.sin(this.wobble));
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath(); ctx.ellipse(drawX, this.y, this.radius * widthScale, this.radius, 0, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1; ctx.stroke();
+            }
+        }
+
+        class Boss {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                this.maxHealth = (type === 'sub') ? 300 : 500;
+                this.health = this.maxHealth;
+                this.dead = false;
+                this.angle = 0;
+                this.attackTimer = 0;
+                this.name = (type === 'sub') ? 'U-BOOT "IRON CLAW"' : 'URZEIT-LEVIATHAN';
+                bossUi.style.display = 'flex';
+                bossName.innerText = this.name;
+                this.vy = 2;
+            }
+            update() {
+                if (this.dead) return;
+                this.y += this.vy;
+                if (this.y < 100 || this.y > height - 100) this.vy *= -1;
+                let dist = Math.hypot(player.x - this.x, player.y - this.y);
+                if (dist < 60 + player.radius) {
+                    if (player.hitCooldown <= 0 && player.shieldTimer <= 0) {
+                        player.takeDamage(20);
+                        player.vx = -20;
+                    }
+                }
+                shockwaves.forEach(s => {
+                    let sDist = Math.hypot(s.x - this.x, s.y - this.y);
+                    if (sDist < 80 + s.radius && s.power > 0) {
+                        this.health -= 10;
+                        playSound('boss_hit');
+                        s.power = 0;
+                        ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(this.x-cameraX, this.y, 60, 0, Math.PI*2); ctx.fill();
+                    }
+                });
+                bossHealthFill.style.width = (this.health / this.maxHealth * 100) + "%";
+                if (this.health <= 0) {
+                    this.dead = true; bossUi.style.display = 'none'; score += 5000;
+                    showFloatingText("BOSS BESIEGT!", this.x, this.y);
+                    goal = new GoalObject(this.x + 200, height/2, 'chest'); playSound('win');
+                }
+            }
+            draw() {
+                if (this.dead) return;
+                let drawX = this.x - cameraX;
+                ctx.save(); ctx.translate(drawX, this.y);
+                if (this.type === 'sub') {
+                    ctx.fillStyle = '#444'; ctx.beginPath(); ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#666'; ctx.fillRect(-30, -50, 40, 30);
+                    ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(0, -5, 10, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#222'; ctx.fillRect(70, -10, 10, 20);
+                    let clawY = Math.sin(frames*0.1)*20;
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-50, 10); ctx.lineTo(-100, 30+clawY); ctx.stroke();
+                    ctx.fillStyle = 'silver'; ctx.beginPath(); ctx.arc(-100, 30+clawY, 15, 0, Math.PI*2); ctx.fill();
+                } else {
+                    let scale = 1 + Math.sin(frames*0.05)*0.1; ctx.scale(scale, scale);
+                    ctx.fillStyle = '#2a0a33'; ctx.beginPath(); ctx.arc(0, 0, 70, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(-30, -20, 10, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(-30, 20, 10, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(20, 0, 15, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#4a0a55'; ctx.lineWidth = 8;
+                    for(let i=0; i<6; i++) {
+                        let a = (i/6)*Math.PI*2 + frames*0.05; ctx.beginPath(); ctx.moveTo(Math.cos(a)*60, Math.sin(a)*60); ctx.lineTo(Math.cos(a)*100, Math.sin(a)*100); ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
+        }
+
         class Obstacle { constructor(x, y, w, h, type) { this.x = x; this.y = y; this.w = w; this.h = h; this.type = type; this.style = currentLevel.obstacleStyle; this.points = []; let segments = type === 'float' ? 12 : Math.max(5, Math.floor(w / 15)); for(let i=0; i<=segments; i++) { this.points.push((Math.random() - 0.5) * 15); } this.details = []; let detailCount = Math.floor((w * h) / 1000); if (detailCount > 15) detailCount = 15; for(let i=0; i<detailCount; i++) { this.details.push({ x: Math.random() * (w - 20) + 10, y: Math.random() * (h - 20) + 10, r: Math.random() * 10 + 5, type: Math.random() > 0.5 ? 'shadow' : 'highlight' }); } } draw() { let drawX = this.x - cameraX; if (drawX + this.w < 0 || drawX > width) return; let fillCol, strokeCol; if (this.style === 'ice') { fillCol = 'rgba(230, 240, 255, 0.9)'; strokeCol = '#aaccff'; } else if (this.style === 'volcano') { fillCol = '#2b0a00'; strokeCol = '#ff3300'; } else if (this.style === 'ruin') { fillCol = '#334433'; strokeCol = '#668866'; } else if (this.style === 'alien') { fillCol = '#110022'; strokeCol = '#cc00ff'; } else { fillCol = '#4a4a60'; strokeCol = '#222'; } ctx.save(); ctx.fillStyle = fillCol; ctx.strokeStyle = strokeCol; ctx.lineWidth = (this.style==='ruin')?3:2; ctx.beginPath(); if (this.type === 'rock_bottom') { let segmentWidth = this.w / (this.points.length - 1); ctx.moveTo(drawX, height); ctx.lineTo(drawX, this.y + 20); for(let i=0; i<this.points.length; i++) { let px = drawX + i * segmentWidth; let py = this.y + this.points[i]; if(this.style === 'ruin') py = this.y + (i%2===0 ? 0 : 10); if(this.style === 'volcano') py -= Math.sin((i/this.points.length)*Math.PI)*30; ctx.lineTo(px, py); } ctx.lineTo(drawX + this.w, height); } else if (this.type === 'rock_top') { let segmentWidth = this.w / (this.points.length - 1); ctx.moveTo(drawX, 0); ctx.lineTo(drawX, this.y + this.h - 20); for(let i=0; i<this.points.length; i++) { let px = drawX + i * segmentWidth; let py = (this.y + this.h) + this.points[i]; if(this.style === 'ice') py += (i%2===0 ? 20 : -10); ctx.lineTo(px, py); } ctx.lineTo(drawX + this.w, 0); } else { let cx = drawX + this.w / 2; let cy = this.y + this.h / 2; let rx = this.w / 2; let ry = this.h / 2; for(let i=0; i<this.points.length; i++) { let angle = (i / this.points.length) * Math.PI * 2; let noise = this.points[i]; let px = cx + Math.cos(angle) * (rx + noise); let py = cy + Math.sin(angle) * (ry + noise); if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); } ctx.closePath(); } ctx.fill(); this.details.forEach(d => { let dx = drawX + d.x; if (this.type === 'rock_bottom') dx = drawX + (d.x % this.w); ctx.fillStyle = d.type === 'shadow' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.1)'; if(this.style === 'volcano' && d.type === 'highlight') ctx.fillStyle = 'rgba(255, 100, 0, 0.2)'; ctx.beginPath(); ctx.arc(dx, this.y + d.y, d.r, 0, Math.PI*2); ctx.fill(); }); if (this.style !== 'volcano') { ctx.fillStyle = 'rgba(200, 255, 255, 0.05)'; for(let i=0; i<3; i++) { let waveY = this.y + (Math.sin((drawX + frames*2)/100 + i)*20); ctx.fillRect(drawX, waveY, this.w, 5); } } ctx.stroke(); ctx.restore(); if (this.style === 'volcano') { ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(drawX + this.w*0.3, this.y+20); ctx.lineTo(drawX + this.w*0.4, this.y+40); ctx.stroke(); } } }
         
         class Enemy { constructor(x, y, type) { this.x = x; this.y = y; this.type = type; this.baseY = y; this.offset = Math.random() * Math.PI * 2; this.speed = Math.random() * 0.01 + 0.005; this.vx = 0; this.vy = 0; this.stunned = false; this.dead = false; this.rotation = 0; this.rotationSpeed = 0; if (type === 'jelly') { this.radius = 20; this.damage = 15; this.points = 50; this.timeBonus = 3; } else if (type === 'puffer') { this.radius = 25; this.damage = 35; this.points = 100; this.inflateState = 0; this.timeBonus = 5; } else if (type === 'eel') { this.radius = 15; this.length = 80; this.damage = 30; this.points = 150; this.speed = 0.02; this.timeBonus = 8; } else if (type === 'seal') { this.radius = 30; this.damage = 25; this.points = 200; this.speed = 0.03; this.timeBonus = 6; } else if (type === 'shark') { this.radius = 35; this.damage = 40; this.points = 300; this.speed = 0.04; this.timeBonus = 7; } else if (type === 'whale') { this.radius = 60; this.damage = 50; this.points = 500; this.speed = 0.02; this.timeBonus = 10; } else if (type === 'angler') { this.radius = 30; this.damage = 45; this.points = 400; this.speed = 0.02; this.timeBonus = 8; } } update() { if (this.stunned) { this.x += this.vx; this.y += this.vy; this.rotation += this.rotationSpeed; this.vx *= 0.94; this.vy *= 0.94; this.rotationSpeed *= 0.98; if (this.y > height + 50 || this.y < -50 || Math.abs(this.vx) < 0.1) if(Math.abs(this.vx) < 0.5) this.dead = true; } else { if (this.type === 'eel') { this.x -= 1; this.y = this.baseY + Math.sin(frames * 0.1 + this.offset) * 30; if (this.x < player.x - 500) this.x += 2000; } else if (this.type === 'shark' || this.type === 'seal' || this.type === 'angler') { this.x -= this.speed * 100; this.y = this.baseY + Math.sin(frames * 0.05 + this.offset) * (this.type==='shark'?50:100); if (this.x < player.x - 600) this.x += 2500; } else if (this.type === 'whale') { this.x -= this.speed * 100; this.y = this.baseY + Math.sin(frames * 0.03 + this.offset) * 60; this.rotation = Math.sin(frames * 0.03 + this.offset) * 0.1; if (this.x < player.x - 800) this.x += 3000; } else if (this.type === 'puffer') { this.y = this.baseY + Math.sin(frames * this.speed + this.offset) * 20; this.inflateState = Math.sin(frames * 0.05 + this.offset); } else { this.y = this.baseY + Math.sin(frames * this.speed + this.offset) * 40; this.x += Math.sin(frames * this.speed * 0.5 + this.offset) * 0.5; } if (player.hitCooldown <= 0 && gameState === 'PLAYING' && player.shieldTimer <= 0) { let collisionDist = (this.type === 'eel') ? 35 : (this.type === 'whale' ? 70 : this.radius + player.radius); if (Math.hypot(this.x - player.x, this.y - player.y) < collisionDist) { let dmg = this.damage; if (playerData.upgrades.thick_skin) dmg *= 0.8; player.takeDamage(dmg); player.vx = (this.type === 'whale') ? -30 : -15; } } } } draw() { if (this.dead) return; let drawX = this.x - cameraX; if (drawX < -150 || drawX > width + 150) return; ctx.save(); ctx.translate(drawX, this.y); ctx.rotate(this.rotation); if (this.type === 'seal') { ctx.scale(-1, 1); ctx.fillStyle = this.stunned ? '#888' : '#776655'; ctx.beginPath(); ctx.ellipse(0, 0, 40, 15, 0, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-35, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(30, -5, 2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#554433'; ctx.beginPath(); ctx.ellipse(10, 10, 15, 5, Math.PI/4, 0, Math.PI*2); ctx.fill(); } else if (this.type === 'shark') { ctx.scale(-1, 1); ctx.fillStyle = this.stunned ? '#888' : '#556677'; ctx.beginPath(); ctx.moveTo(50, 0); ctx.quadraticCurveTo(0, -25, -50, -10); ctx.lineTo(-50, 10); ctx.quadraticCurveTo(0, 25, 50, 0); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-10, -40); ctx.lineTo(-20, -15); ctx.fill(); ctx.beginPath(); ctx.moveTo(-50, 0); ctx.lineTo(-70, -20); ctx.lineTo(-70, 20); ctx.fill(); ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(30, -5, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='black'; ctx.beginPath(); ctx.arc(30, -5, 1, 0, Math.PI*2); ctx.fill(); } else if (this.type === 'whale') { ctx.fillStyle = this.stunned ? '#666' : '#223344'; ctx.beginPath(); ctx.ellipse(0, 0, 80, 40, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#445566'; ctx.beginPath(); ctx.ellipse(0, 20, 60, 15, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#223344'; let tailWag = Math.sin(frames*0.1 + this.offset)*15; ctx.beginPath(); ctx.moveTo(70, 0); ctx.lineTo(100, -30+tailWag); ctx.lineTo(100, 30+tailWag); ctx.fill(); ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-40, -5, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-40, -5, 1.5, 0, Math.PI*2); ctx.fill(); } else if (this.type === 'angler') { ctx.scale(-1, 1); ctx.fillStyle = this.stunned ? '#555' : '#2a2a2a'; ctx.beginPath(); ctx.ellipse(0, 0, 30, 25, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#1a1a1a'; ctx.beginPath(); ctx.arc(0, 10, 20, 0, Math.PI); ctx.fill(); ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.moveTo(15, 10); ctx.lineTo(12, 5); ctx.lineTo(9, 10); ctx.moveTo(-15, 10); ctx.lineTo(-12, 5); ctx.lineTo(-9, 10); ctx.fill(); ctx.strokeStyle = '#555'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(10, -20); ctx.quadraticCurveTo(30, -40, 40, -10); ctx.stroke(); let glow = Math.abs(Math.sin(frames*0.1))*5 + 5; ctx.shadowBlur = 15; ctx.shadowColor = '#ffffaa'; ctx.fillStyle = '#ffffaa'; ctx.beginPath(); ctx.arc(40, -10, 4, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(15, -5, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(15, -5, 1, 0, Math.PI*2); ctx.fill(); } else if (this.type === 'jelly') { let pulse = Math.sin(frames * 0.1) * 2; ctx.fillStyle = this.stunned ? 'rgba(150, 150, 150, 0.5)' : 'rgba(200, 255, 255, 0.7)'; ctx.beginPath(); ctx.arc(0, 0, this.radius + pulse, Math.PI, 0); ctx.bezierCurveTo(this.radius+pulse, 15, -(this.radius+pulse), 15, -(this.radius+pulse), 0); ctx.fill(); ctx.strokeStyle = this.stunned ? 'rgba(150,150,150,0.5)' : 'rgba(255, 200, 255, 0.6)'; ctx.lineWidth = 3; for(let i=-2; i<=2; i++) { ctx.beginPath(); ctx.moveTo(i*6, 5); ctx.quadraticCurveTo(i*8 + (this.stunned?0:Math.sin(frames*0.1+i)*5), 20, i*4, 35); ctx.stroke(); } } else if (this.type === 'puffer') { let scale = 1 + (this.inflateState * 0.2); ctx.scale(scale, scale); ctx.fillStyle = this.stunned ? '#888' : '#eebb00'; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#553300'; ctx.lineWidth = 2; for(let i=0; i<8; i++) { let a = (i/8)*Math.PI*2 + frames*0.05; ctx.beginPath(); ctx.moveTo(Math.cos(a)*this.radius, Math.sin(a)*this.radius); ctx.lineTo(Math.cos(a)*(this.radius+10), Math.sin(a)*(this.radius+10)); ctx.stroke(); } ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-8, -5, 6, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-8, -5, 2, 0, Math.PI*2); ctx.fill(); } else if (this.type === 'eel') { ctx.fillStyle = this.stunned ? '#666' : '#2a3b2a'; if (this.stunned) { ctx.beginPath(); ctx.ellipse(0, 0, 40, 10, 0, 0, Math.PI*2); ctx.fill(); } else { ctx.beginPath(); for(let i=0; i<=10; i++) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; if(i===0) ctx.moveTo(xPos, wave-th); else ctx.lineTo(xPos, wave-th); } for(let i=10; i>=0; i--) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; ctx.lineTo(xPos, wave+th); } ctx.closePath(); ctx.fill(); ctx.fillStyle = '#1a2b1a'; ctx.beginPath(); for(let i=2; i<=8; i++) { let xPos = i*8; let wave = Math.sin(frames*0.2 + i*0.5)*8; let th = (1-i/12)*12+2; if(i===2) ctx.moveTo(xPos, wave-th); else ctx.lineTo(xPos, wave-th-8); } ctx.lineTo(64, Math.sin(frames*0.2+4)*8); ctx.fill(); ctx.fillStyle='#ccff00'; let hw = Math.sin(frames*0.2)*8; ctx.beginPath(); ctx.arc(6, hw-4, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle='black'; ctx.fillRect(6, hw-5, 1, 3); } } ctx.restore(); } }
@@ -784,30 +839,21 @@
                 this.health = 100; this.angle = 0; this.hitCooldown = 0;
                 this.maxEnergy = playerData.upgrades.ink_tank ? 150 : 100; this.energy = this.maxEnergy; 
                 this.orbitInit = false; this.blinkTimer = 0; this.isBlinking = false; this.bubbleTimer = 0; 
-                // PowerUp States
                 this.shieldTimer = 0; this.chiliTimer = 0; this.magnetTimer = 0; this.shrinkTimer = 0;
                 this.scale = 1;
-                // Pet
                 this.pet = null;
                 if (playerData.activePet) this.pet = new Pet(playerData.activePet);
             }
 
             takeDamage(amount) {
-                // Check for Pet Shield (Turtle)
                 if (this.pet && this.pet.type === 'pet_turtle' && !this.pet.abilityUsed) {
-                    this.pet.abilityUsed = true;
-                    playSound('pet_skill');
-                    showFloatingText("GEBLOCKT!", this.x, this.y - 50);
-                    // Visual effect
-                    shockwaves.push(new Shockwave(this.x, this.y, 0)); // Visual shockwave only
-                    return; // No damage
+                    this.pet.abilityUsed = true; this.pet.cooldownTimer = 0;
+                    playSound('pet_skill'); showFloatingText("GEBLOCKT!", this.x, this.y - 50);
+                    shockwaves.push(new Shockwave(this.x, this.y, 0));
+                    return;
                 }
-
-                this.health -= amount;
-                this.hitCooldown = 60;
-                playSound('hit');
-                hitOverlay.style.opacity = 0.8; 
-                setTimeout(() => hitOverlay.style.opacity = 0, 200);
+                this.health -= amount; this.hitCooldown = 60; playSound('hit');
+                hitOverlay.style.opacity = 0.8; setTimeout(() => hitOverlay.style.opacity = 0, 200);
             }
 
             update() {
@@ -816,10 +862,8 @@
                 if (this.chiliTimer > 0) this.chiliTimer--;
                 if (this.magnetTimer > 0) this.magnetTimer--;
                 
-                // Update Pet
                 if (this.pet) {
                     this.pet.update(this);
-                    // If pet changed in pause menu
                     if (this.pet.type !== playerData.activePet) {
                         this.pet = playerData.activePet ? new Pet(playerData.activePet) : null;
                     }
@@ -827,16 +871,7 @@
                     this.pet = new Pet(playerData.activePet);
                 }
 
-                // Shrink Logic
-                if (this.shrinkTimer > 0) {
-                    this.shrinkTimer--;
-                    this.scale = 0.5;
-                    this.radius = this.baseRadius * 0.5;
-                } else {
-                    this.scale = 1;
-                    this.radius = this.baseRadius;
-                }
-
+                if (this.shrinkTimer > 0) { this.shrinkTimer--; this.scale = 0.5; this.radius = this.baseRadius * 0.5; } else { this.scale = 1; this.radius = this.baseRadius; }
                 if (this.energy < this.maxEnergy) this.energy += 0.3; 
                 if (gameState === 'VICTORY_ANIMATION') { this.victoryOrbit(); return; }
 
@@ -845,7 +880,7 @@
                     let dist = Math.hypot(this.x - p.x, this.y - p.y);
                     if (dist < this.radius + p.radius) {
                         playSound('powerup');
-                        if (p.type === 'shield') { let duration = 300 + (currentLevelIndex * 60); this.shieldTimer = duration; showFloatingText("SCHILD!", this.x, this.y - 50); } 
+                        if (p.type === 'shield') { this.shieldTimer = 300 + (currentLevelIndex * 60); showFloatingText("SCHILD!", this.x, this.y - 50); } 
                         else if (p.type === 'chili') { this.chiliTimer = 300; this.energy = this.maxEnergy; showFloatingText("SPEED!", this.x, this.y - 50); } 
                         else if (p.type === 'health') { this.health = Math.min(100, this.health + 25); showFloatingText("HEILUNG!", this.x, this.y - 50); }
                         else if (p.type === 'magnet') { this.magnetTimer = 600; showFloatingText("MAGNET!", this.x, this.y - 50); }
@@ -855,15 +890,8 @@
                 }
 
                 let dx = 0; let dy = 0;
-                
-                // Keyboard Inputs (Digital - 100% Speed)
-                if (keys.ArrowRight || keys.d) dx = 1;
-                else if (keys.ArrowLeft || keys.a) dx = -1;
-                
-                if (keys.ArrowUp || keys.w) dy = -1;
-                else if (keys.ArrowDown || keys.s) dy = 1;
-
-                // Joystick Inputs (Analog - Smoother & max 80% speed for better control)
+                if (keys.ArrowRight || keys.d) dx = 1; else if (keys.ArrowLeft || keys.a) dx = -1;
+                if (keys.ArrowUp || keys.w) dy = -1; else if (keys.ArrowDown || keys.s) dy = 1;
                 if (dx === 0 && Math.abs(joystickVector.x) > 0.05) dx = joystickVector.x * 0.8;
                 if (dy === 0 && Math.abs(joystickVector.y) > 0.05) dy = joystickVector.y * 0.8;
 
@@ -874,124 +902,87 @@
                     this.maxSpeed = this.baseMaxSpeed * (chiliActive ? 2.5 : 2.2); this.acceleration = this.baseAcceleration * (chiliActive ? 3.0 : 2.5); 
                     if (!chiliActive) this.energy -= 1.0; 
                     if (frames % 3 === 0) { let bx = this.x - Math.cos(this.angle)*25; let by = this.y - Math.sin(this.angle)*25; bubbles.push(new Bubble(bx, by, Math.random()*4+2, true)); }
-                } else {
-                    this.maxSpeed = this.baseMaxSpeed; this.acceleration = this.baseAcceleration;
-                }
+                } else { this.maxSpeed = this.baseMaxSpeed; this.acceleration = this.baseAcceleration; }
 
                 this.vx += dx * this.acceleration; this.vy += dy * this.acceleration;
                 let speed = Math.hypot(this.vx, this.vy);
-                if (speed > 1) { this.bubbleTimer++; let freq = (isSprinting || chiliActive) ? 10 : 25; if (this.bubbleTimer > freq) { playSound('bubble'); this.bubbleTimer = 0; }
-                    if (speed > 3 && frames % 5 === 0) { let bx = this.x - Math.cos(this.angle)*20 + (Math.random()-0.5)*10; let by = this.y - Math.sin(this.angle)*20 + (Math.random()-0.5)*10; bubbles.push(new Bubble(bx, by, Math.random()*3+1, true)); }
+                if (speed > 1) { this.bubbleTimer++; if (this.bubbleTimer > ((isSprinting || chiliActive) ? 10 : 25)) { playSound('bubble'); this.bubbleTimer = 0; }
+                    if (speed > 3 && frames % 5 === 0) { let bx = this.x - Math.cos(this.angle)*20; let by = this.y - Math.sin(this.angle)*20; bubbles.push(new Bubble(bx, by, Math.random()*3+1, true)); }
                 }
                 if (speed > this.maxSpeed) { let scale = this.maxSpeed / speed; this.vx *= scale; this.vy *= scale; }
                 this.vx *= this.friction; this.vy *= this.friction;
-                if(Math.abs(this.vx) < 0.01) this.vx = 0; if(Math.abs(this.vy) < 0.01) this.vy = 0;
                 
                 let nextX = this.x + this.vx; let nextY = this.y + this.vy;
                 let collided = false;
                 obstacles.forEach(obs => {
                     let testX = nextX; let testY = nextY;
-                    let rx = obs.x; let ry = obs.y; let rw = obs.w; let rh = obs.h;
-                    if (obs.type === 'rock_bottom') rh = height - obs.y;
-                    if (obs.type === 'rock_top') { ry = 0; rh = obs.h + obs.y; }
+                    let rx = obs.x; let ry = obs.y; let rw = obs.w; let rh = (obs.type === 'rock_bottom') ? height - obs.y : (obs.type === 'rock_top' ? obs.h + obs.y : obs.h);
+                    if (obs.type === 'rock_top') ry = 0;
                     if (nextX < rx) testX = rx; else if (nextX > rx + rw) testX = rx + rw;
                     if (nextY < ry) testY = ry; else if (nextY > ry + rh) testY = ry + rh;
-                    if (Math.hypot(nextX - testX, nextY - testY) <= this.radius) {
-                        collided = true; this.vx *= -0.5; this.vy *= -0.5;
-                        if (this.hitCooldown <= 0 && this.shieldTimer <= 0) {
-                            let dmg = 10;
-                            if (playerData.upgrades.thick_skin) dmg *= 0.8;
-                            this.takeDamage(dmg);
-                        }
-                    }
+                    if (Math.hypot(nextX - testX, nextY - testY) <= this.radius) { collided = true; this.vx *= -0.5; this.vy *= -0.5; if (this.hitCooldown <= 0 && this.shieldTimer <= 0) { this.takeDamage(playerData.upgrades.thick_skin ? 8 : 10); } }
                 });
 
                 if (!collided) { this.x = nextX; this.y = nextY; }
                 if (this.y < this.radius) { this.y = this.radius; this.vy = 0; }
                 if (this.y > height - 40) { this.y = height - 40; this.vy = 0; }
                 if (this.x < 50) { this.x = 50; this.vx = 0; }
-                
-                // Boundary depends on mode
-                let maxDist = isEndless ? 99999999 : currentLevel.length + 500;
-                if (this.x > maxDist) this.x = maxDist;
-
                 if (this.vx !== 0 || this.vy !== 0) {
                     let targetAngle = Math.atan2(this.vy, this.vx);
                     let diff = targetAngle - this.angle;
                     if (diff > Math.PI) diff -= Math.PI * 2; if (diff < -Math.PI) diff += Math.PI * 2;
                     this.angle += diff * 0.1;
                 }
-
                 if (this.hitCooldown > 0) this.hitCooldown--;
                 if (keys[" "] || mouse.clicked) { this.attack(); mouse.clicked = false; keys[" "] = false; }
             }
             
             attack() {
-                if (this.energy < 25) return;
-                this.energy -= 25;
+                if (this.energy < 25) return; this.energy -= 25;
                 shockwaves.push(new Shockwave(this.x, this.y, 1));
-                let range = this.radius * 6; 
                 enemies.forEach(enemy => {
-                    let dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
-                    if (dist < range) {
+                    if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius * 6) {
                         let angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
                         enemy.vx = Math.cos(angle) * 25; enemy.vy = Math.sin(angle) * 25;
                         enemy.rotationSpeed = (Math.random() - 0.5) * 2;
-                        if (!enemy.stunned) {
-                            score += enemy.points; enemy.stunned = true; playSound('bonus'); timeLeft += enemy.timeBonus || 2; particles.push(new InkParticle(enemy.x, enemy.y, '#00ff00'));
-                        }
+                        if (!enemy.stunned) { score += enemy.points; enemy.stunned = true; playSound('bonus'); timeLeft += enemy.timeBonus || 2; particles.push(new InkParticle(enemy.x, enemy.y, '#00ff00')); }
                     }
                 });
             }
 
             victoryOrbit() {
-                if (!this.orbitInit) { this.orbitInit = true; this.victoryOrbitAngle = Math.atan2(this.y - goal.y, this.x - goal.x); this.orbitRadius = Math.hypot(this.x - goal.x, this.y - goal.y); if (this.orbitRadius < 80) this.orbitRadius = 80; if (this.orbitRadius > 200) this.orbitRadius = 200; playSound('win'); }
+                if (!this.orbitInit) { this.orbitInit = true; this.victoryOrbitAngle = Math.atan2(this.y - goal.y, this.x - goal.x); this.orbitRadius = Math.hypot(this.x - goal.x, this.y - goal.y); if (this.orbitRadius < 80) this.orbitRadius = 80; playSound('win'); }
                 this.victoryOrbitAngle += 0.05; this.orbitRadius += (120 - this.orbitRadius) * 0.05;
-                this.x = goal.x + Math.cos(this.victoryOrbitAngle) * this.orbitRadius;
-                this.y = goal.y + Math.sin(this.victoryOrbitAngle) * this.orbitRadius;
+                this.x = goal.x + Math.cos(this.victoryOrbitAngle) * this.orbitRadius; this.y = goal.y + Math.sin(this.victoryOrbitAngle) * this.orbitRadius;
                 this.angle = this.victoryOrbitAngle + Math.PI / 2;
-                if (frames % 5 === 0) { let colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff']; particles.push(new InkParticle(this.x, this.y, colors[Math.floor(Math.random()*colors.length)])); }
+                if (frames % 5 === 0) particles.push(new InkParticle(this.x, this.y, `hsl(${frames%360}, 100%, 50%)`));
             }
 
             draw() {
                 let drawX = this.x - cameraX;
                 ctx.save(); ctx.translate(drawX, this.y); 
-                
-                // Draw Pet behind player
                 if (this.pet) this.pet.draw();
-
-                // Draw Magnet Aura
-                if (this.magnetTimer > 0) {
-                     ctx.fillStyle = `rgba(255, 215, 0, 0.15)`;
-                     ctx.beginPath(); ctx.arc(0, 0, 300, 0, Math.PI*2); ctx.fill();
-                     ctx.strokeStyle = `rgba(255, 215, 0, 0.3)`;
-                     ctx.beginPath(); ctx.arc(0, 0, 300 - (frames%20)*15, 0, Math.PI*2); ctx.stroke();
+                if (this.pet && this.pet.type === 'pet_turtle' && !this.pet.abilityUsed) {
+                    ctx.save(); ctx.strokeStyle = `rgba(50, 255, 100, ${0.6 + Math.sin(frames*0.1)*0.3})`; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = '#00ff00'; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 22, 0, Math.PI*2); ctx.stroke(); ctx.restore();
                 }
-
-                if (this.chiliTimer > 0) { ctx.fillStyle = `rgba(255, 100, 0, ${Math.abs(Math.sin(frames*0.5))*0.6})`; ctx.beginPath(); ctx.ellipse(-20, 0, 40, 15, 0, 0, Math.PI*2); ctx.fill(); }
-                ctx.rotate(this.angle); 
-                ctx.scale(this.scale, this.scale);
-
-                if (this.shieldTimer > 0) { ctx.save(); ctx.strokeStyle = `rgba(220, 150, 255, ${0.5 + Math.sin(frames*0.2)*0.2})`; ctx.lineWidth = 4; ctx.shadowBlur = 10; ctx.shadowColor = '#aa00ff'; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 15, 0, Math.PI*2); ctx.stroke(); ctx.restore(); }
-                if (this.energy >= 25) { ctx.fillStyle = 'rgba(255, 215, 0, 0.2)'; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 10, 0, Math.PI * 2); ctx.fill(); }
-                ctx.fillStyle = this.color; ctx.lineWidth = 1; ctx.strokeStyle = this.color;
-                if (playerData.activeSkin === 'robot') { ctx.lineWidth = 2; }
+                if (this.magnetTimer > 0) {
+                     ctx.fillStyle = `rgba(255, 215, 0, 0.1)`; ctx.beginPath(); ctx.arc(0, 0, 300, 0, Math.PI*2); ctx.fill();
+                     ctx.strokeStyle = `rgba(255, 215, 0, 0.3)`; ctx.beginPath(); ctx.arc(0, 0, 300 - (frames%20)*15, 0, Math.PI*2); ctx.stroke();
+                }
+                if (this.chiliTimer > 0) { ctx.fillStyle = `rgba(255, 100, 0, ${Math.abs(Math.sin(frames*0.5))*0.4})`; ctx.beginPath(); ctx.ellipse(-20, 0, 40, 15, 0, 0, Math.PI*2); ctx.fill(); }
+                ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+                if (this.shieldTimer > 0) { ctx.strokeStyle = `rgba(220, 150, 255, 0.7)`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 15, 0, Math.PI*2); ctx.stroke(); }
+                ctx.fillStyle = this.color; ctx.strokeStyle = this.color;
                 for(let i=0; i<8; i++) {
-                    let baseAngle = (i/8) * Math.PI * 2; let dragX = -this.vx * 4; let dragY = -this.vy * 4;
-                    if (gameState === 'VICTORY_ANIMATION') { dragX = -Math.cos(this.angle) * 5; dragY = -Math.sin(this.angle) * 5; }
-                    let bx = Math.cos(baseAngle) * this.baseRadius; let by = Math.sin(baseAngle) * this.baseRadius;
-                    let wave = Math.sin(frames * 0.15 + i) * 6;
-                    let tx = bx * 1.5 + dragX + wave; let ty = by * 1.5 + dragY + wave;
-                    let cpx1 = bx * 1.8 + dragX * 0.3; let cpy1 = by * 1.8 + dragY * 0.3;
-                    ctx.beginPath(); ctx.moveTo(bx, by); ctx.quadraticCurveTo(cpx1, cpy1, tx, ty);
-                    ctx.lineWidth = playerData.activeSkin === 'robot' ? 6 : 8; ctx.lineCap = 'round'; ctx.stroke();
-                    if (playerData.activeSkin === 'robot') { ctx.fillStyle = '#445566'; ctx.beginPath(); ctx.arc(bx, by, 3, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(tx, ty, 3, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = this.color; } else { ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(tx, ty, 2, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = this.color; }
+                    let baseAngle = (i/8) * Math.PI * 2; let wave = Math.sin(frames * 0.15 + i) * 6;
+                    let tx = Math.cos(baseAngle) * this.baseRadius * 1.5 + wave; let ty = Math.sin(baseAngle) * this.baseRadius * 1.5 + wave;
+                    ctx.lineWidth = playerData.activeSkin === 'robot' ? 6 : 8; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(Math.cos(baseAngle)*this.baseRadius, Math.sin(baseAngle)*this.baseRadius); ctx.lineTo(tx, ty); ctx.stroke();
                 }
                 ctx.beginPath(); ctx.arc(0, 0, this.baseRadius, 0, Math.PI * 2); ctx.fill();
-                if (playerData.activeSkin === 'robot') { ctx.fillStyle = 'black'; ctx.beginPath(); ctx.rect(4, -8, 16, 16); ctx.fill(); ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.arc(12, 0, 4, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#8899aa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(-15, 0); ctx.stroke(); ctx.fillStyle = (frames%20<10) ? 'red' : '#550000'; ctx.beginPath(); ctx.arc(-18, 0, 3, 0, Math.PI*2); ctx.fill(); } 
-                else { if (gameState === 'VICTORY_ANIMATION' || this.isBlinking) { ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(6, -8); ctx.lineTo(14, -8); ctx.stroke(); ctx.beginPath(); ctx.moveTo(6, 8); ctx.lineTo(14, 8); ctx.stroke(); } else { ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(10, -8, 8, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(10, 8, 8, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = 'black'; let pupX = 12 + Math.min(2, Math.max(-2, this.vx)); ctx.beginPath(); ctx.arc(pupX, -8, 3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(pupX, 8, 3, 0, Math.PI * 2); ctx.fill(); } }
-                if (playerData.activeSkin === 'sunglasses') { ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(10, -8, 10, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(10, 8, 10, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'black'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(10, -5); ctx.lineTo(10, 5); ctx.stroke(); }
-                if (playerData.activeSkin === 'pirate') { ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(-10, -25); ctx.lineTo(20, 0); ctx.lineTo(-10, 25); ctx.quadraticCurveTo(-20, 0, -10, -25); ctx.fill(); ctx.fillStyle = 'white'; ctx.beginPath(); ctx.arc(-5, 0, 5, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(-3, -2, 1.5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-3, 2, 1.5, 0, Math.PI*2); ctx.fill(); }
+                if (playerData.activeSkin !== 'robot') {
+                    ctx.fillStyle = this.isBlinking ? 'rgba(0,0,0,0)' : 'white'; ctx.beginPath(); ctx.arc(10, -8, 8, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(10, 8, 8, 0, Math.PI * 2); ctx.fill();
+                    if (!this.isBlinking) { ctx.fillStyle = 'black'; ctx.beginPath(); ctx.arc(12, -8, 3, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(12, 8, 3, 0, Math.PI * 2); ctx.fill(); }
+                } else { ctx.fillStyle = 'black'; ctx.fillRect(4, -8, 16, 16); ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(12, 0, 4, 0, Math.PI*2); ctx.fill(); }
                 ctx.restore();
             }
         }
@@ -999,10 +990,10 @@
         class GoalObject {
             constructor(x, y, type) { this.x = x; this.y = y; this.type = type; this.rotation = 0; }
             draw() {
-                let drawX = this.x - cameraX; this.rotation += 0.01;
-                ctx.save(); ctx.translate(drawX, this.y);
-                let glowSize = Math.abs(Math.sin(frames * 0.05)) * 10 + 40; ctx.fillStyle = 'rgba(255, 255, 0, 0.2)'; ctx.beginPath(); ctx.arc(0, -10, glowSize, 0, Math.PI*2); ctx.fill();
-                if (this.type === 'chest') { ctx.fillStyle = '#d4af37'; ctx.fillRect(-30, -20, 60, 40); ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0, -20, 30, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#000'; ctx.fillRect(-5, -5, 10, 10); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-30, -20, 60, 40); if(frames%10===0) { ctx.fillStyle = 'white'; let sx = (Math.random()-0.5)*60; let sy = (Math.random()-0.5)*40; ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI*2); ctx.fill(); } } else { ctx.rotate(this.rotation); ctx.fillStyle = '#ffcc00'; ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*35, Math.sin((18+i*72)*Math.PI/180)*35); ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*(35/2.5), Math.sin((54+i*72)*Math.PI/180)*(35/2.5)); } ctx.closePath(); ctx.fill(); }
+                let drawX = this.x - cameraX; this.rotation += 0.01; ctx.save(); ctx.translate(drawX, this.y);
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.2)'; ctx.beginPath(); ctx.arc(0, -10, 50, 0, Math.PI*2); ctx.fill();
+                if (this.type === 'chest') { ctx.fillStyle = '#d4af37'; ctx.fillRect(-30, -20, 60, 40); ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.arc(0, -20, 30, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#000'; ctx.fillRect(-5, -5, 10, 10); } 
+                else { ctx.rotate(this.rotation); ctx.fillStyle = '#ffcc00'; ctx.beginPath(); for (let i = 0; i < 5; i++) { ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*35, Math.sin((18+i*72)*Math.PI/180)*35); ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*(35/2.5), Math.sin((54+i*72)*Math.PI/180)*(35/2.5)); } ctx.closePath(); ctx.fill(); }
                 ctx.restore(); 
             }
         }
@@ -1010,23 +1001,13 @@
         function renderShop() {
             const container = document.getElementById('shop-items-container');
             const coinsDisplay = document.getElementById('shop-display-coins');
-            coinsDisplay.innerText = `Münzen: ${playerData.coins}`;
-            container.innerHTML = '';
+            coinsDisplay.innerText = `Münzen: ${playerData.coins}`; container.innerHTML = '';
             SHOP_ITEMS.forEach(item => {
                 const el = document.createElement('div'); el.className = 'shop-item';
                 let btnText = "Kaufen", btnClass = "btn-buy", status = "available";
-                
-                if (item.type === 'skin') { 
-                    if (playerData.skins.includes(item.id)) { if (playerData.activeSkin === item.id) { btnText = "Ausgerüstet"; btnClass = "btn-active"; status = "active"; } else { btnText = "Ausrüsten"; btnClass = "btn-equip"; status = "owned"; } } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; } 
-                } else if (item.type === 'upgrade') { 
-                    if (playerData.upgrades[item.id]) { btnText = "Gekauft"; btnClass = "btn-active"; status = "active"; } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; } 
-                } else if (item.type === 'pet') {
-                    if (playerData.pets.includes(item.id)) {
-                        if (playerData.activePet === item.id) { btnText = "Aktiv"; btnClass = "btn-active"; status = "active"; }
-                        else { btnText = "Rufen"; btnClass = "btn-equip"; status = "owned"; }
-                    } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; }
-                }
-
+                if (item.type === 'skin') { if (playerData.skins.includes(item.id)) { if (playerData.activeSkin === item.id) { btnText = "Ausgerüstet"; btnClass = "btn-active"; status = "active"; } else { btnText = "Ausrüsten"; btnClass = "btn-equip"; status = "owned"; } } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; } } 
+                else if (item.type === 'upgrade') { if (playerData.upgrades[item.id]) { btnText = "Gekauft"; btnClass = "btn-active"; status = "active"; } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; } } 
+                else if (item.type === 'pet') { if (playerData.pets.includes(item.id)) { if (playerData.activePet === item.id) { btnText = "Aktiv"; btnClass = "btn-active"; status = "active"; } else { btnText = "Rufen"; btnClass = "btn-equip"; status = "owned"; } } else if (playerData.coins < item.price) { btnClass = "btn-locked"; status = "locked"; } }
                 el.innerHTML = `<div class="shop-icon">${item.icon}</div><h4>${item.name}</h4><p>${item.desc}</p><div class="price">${status === 'active' || status === 'owned' ? 'Besitz' : item.price}</div><button class="shop-btn ${btnClass}" data-id="${item.id}" data-type="${item.type}">${btnText}</button>`;
                 container.appendChild(el);
             });
@@ -1035,395 +1016,106 @@
 
         function handleShopAction(id, type) {
             const item = SHOP_ITEMS.find(i => i.id === id);
-            
-            if (type === 'skin') { 
-                if (playerData.skins.includes(id)) { playerData.activeSkin = id; playSound('bubble'); } 
-                else if (playerData.coins >= item.price) { playerData.coins -= item.price; playerData.skins.push(id); playerData.activeSkin = id; playSound('buy'); } 
-            } else if (type === 'upgrade') { 
-                if (!playerData.upgrades[id] && playerData.coins >= item.price) { playerData.coins -= item.price; playerData.upgrades[id] = true; playSound('buy'); } 
-            } else if (type === 'pet') {
-                if (playerData.pets.includes(id)) { 
-                    // Toggle pet
-                    if (playerData.activePet === id) playerData.activePet = null; // Unequip if clicking active
-                    else playerData.activePet = id;
-                    playSound('bubble'); 
-                } 
-                else if (playerData.coins >= item.price) { 
-                    playerData.coins -= item.price; 
-                    playerData.pets.push(id); 
-                    playerData.activePet = id; 
-                    playSound('buy'); 
-                }
-            }
+            if (type === 'skin') { if (playerData.skins.includes(id)) { playerData.activeSkin = id; playSound('bubble'); } else if (playerData.coins >= item.price) { playerData.coins -= item.price; playerData.skins.push(id); playerData.activeSkin = id; playSound('buy'); } } 
+            else if (type === 'upgrade') { if (!playerData.upgrades[id] && playerData.coins >= item.price) { playerData.coins -= item.price; playerData.upgrades[id] = true; playSound('buy'); } } 
+            else if (type === 'pet') { if (playerData.pets.includes(id)) { playerData.activePet = (playerData.activePet === id) ? null : id; playSound('bubble'); } else if (playerData.coins >= item.price) { playerData.coins -= item.price; playerData.pets.push(id); playerData.activePet = id; playSound('buy'); } }
             saveData(); renderShop();
         }
 
         function generateEndlessChunk() {
-            let startX = endlessGenX;
-            let length = 1500;
-            endlessGenX += length;
-
-            let difficulty = Math.min(3, 1 + (startX / 20000)); // Increases over distance
-            let obsFreq = 0.4 * difficulty;
-            
-            // Generate Obstacles
-            for (let x = startX; x < startX + length; x += 500) {
-                if (Math.random() < obsFreq) {
+            let startX = endlessGenX; endlessGenX += 1500;
+            let diff = Math.min(3, 1 + (startX / 20000));
+            for (let x = startX; x < startX + 1500; x += 500) {
+                if (Math.random() < 0.4 * diff) {
                     let r = Math.random();
-                    if (r < 0.4) obstacles.push(new Obstacle(x, height - (150+Math.random()*200) + 50, 120 + Math.random()*100, 150+Math.random()*200, 'rock_bottom'));
-                    else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100 + Math.random()*80, 150+Math.random()*150, 'rock_top'));
+                    if (r < 0.4) obstacles.push(new Obstacle(x, height - (150+Math.random()*200) + 50, 120, 150+Math.random()*200, 'rock_bottom'));
+                    else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100, 150+Math.random()*150, 'rock_top'));
                     else obstacles.push(new Obstacle(x, 200 + Math.random() * (height - 400), 100, 100, 'float'));
                 }
             }
-
-            // Generate Enemies
-            let enemyCount = Math.floor(Math.random() * 2 * difficulty) + 1;
-            for(let i=0; i<enemyCount; i++) {
-                let type = ['jelly', 'puffer', 'eel', 'seal', 'shark', 'angler'][Math.floor(Math.random()*6)];
-                enemies.push(new Enemy(startX + Math.random() * length, 50 + Math.random()*(height-100), type));
-            }
-
-            // Generate Coins & Powerups
-            // More coins per chunk
-            let coinNum = Math.floor(Math.random() * 3) + 1;
-            for(let i=0; i<coinNum; i++) {
-                coins.push(new Coin(startX + Math.random()*length, 100+Math.random()*(height-200)));
-            }
-            
-            // Increased Powerup Chance (was 0.1, now 0.5)
-            if (Math.random() < 0.5) {
-                let types = ['shield', 'chili', 'health', 'magnet', 'potion'];
-                powerups.push(new PowerUp(startX + Math.random()*length, 100+Math.random()*(height-200), types[Math.floor(Math.random()*types.length)]));
-            }
-            
-            // Decor
-            for(let i=0; i<5; i++) decors.push({ type: 'coral', x: startX + Math.random()*length, y: height - 20, h: 40 + Math.random() * 60, color: `hsl(${Math.random()*360}, 60%, 50%)` });
-
-            // Cleanup old
-            obstacles = obstacles.filter(o => o.x > cameraX - 1000);
-            enemies = enemies.filter(e => e.x > cameraX - 1000);
-            coins = coins.filter(c => c.x > cameraX - 1000);
-            powerups = powerups.filter(p => p.x > cameraX - 1000);
+            for(let i=0; i<Math.floor(Math.random()*2*diff)+1; i++) enemies.push(new Enemy(startX + Math.random()*1500, 50+Math.random()*(height-100), ['jelly', 'puffer', 'eel', 'seal', 'shark', 'angler'][Math.floor(Math.random()*6)]));
+            for(let i=0; i<Math.floor(Math.random()*3)+1; i++) coins.push(new Coin(startX+Math.random()*1500, 100+Math.random()*(height-200)));
+            if (Math.random() < 0.5) powerups.push(new PowerUp(startX + Math.random()*1500, 100+Math.random()*(height-200), ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
         }
 
         function setupLevel(levelIndex) {
             boss = null; bossUi.style.display = 'none';
-            if (isEndless) {
-                currentLevel = { name: "Unendlicher Ozean", bgTop: "#001133", bgBottom: "#000000", sandColor: "#111122", length: 99999999, timeLimit: 99999, enemyType: 'mix_all', enemyDensity: 1, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 200, lightColor: 'rgba(255,255,255,0.1)' };
-                endlessGenX = 500;
-                levelIndicator.innerText = "Endlos-Modus";
-            } else {
-                currentLevelIndex = levelIndex; currentLevel = LEVELS[levelIndex];
-                levelIndicator.innerText = `Level ${levelIndex + 1}: ${currentLevel.name}`;
-            }
-
+            if (isEndless) { currentLevel = { name: "Unendlicher Ozean", bgTop: "#001133", bgBottom: "#000000", sandColor: "#111122", length: 99999999, timeLimit: 99999, enemyType: 'mix_all', enemyDensity: 1, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 200, lightColor: 'rgba(255,255,255,0.1)' }; endlessGenX = 500; levelIndicator.innerText = "Endlos-Modus"; } 
+            else { currentLevelIndex = levelIndex; currentLevel = LEVELS[levelIndex]; levelIndicator.innerText = `Level ${levelIndex + 1}: ${currentLevel.name}`; }
             decors = []; farDecors = []; foreDecors = []; obstacles = []; enemies = []; bubbles = []; plankton = []; powerups = []; coins = []; cameraX = 0; lightRays = []; bgGradient = null;
-
             for(let i=0; i<5; i++) lightRays.push(new LightRay());
             for(let i=0; i<150; i++) plankton.push(new Plankton());
-            for (let i = 0; i < 40; i++) farDecors.push({ type: 'mountain', x: Math.random() * (isEndless ? width : currentLevel.length), y: height - (Math.random() * 300 + 100), w: Math.random() * 300 + 200, h: Math.random() * 300 + 200, color: 'rgba(0,0,0,0.2)' });
-            
-            if (isEndless) {
-                generateEndlessChunk();
-                goal = new GoalObject(-9999, -9999, 'star'); // No goal
-            } else {
-                // Static generation for story
+            if (isEndless) generateEndlessChunk(); else {
                 for (let i = 0; i < currentLevel.length + 1000; i += 80) decors.push({ type: 'coral', x: i + Math.random()*50, y: height - 20, h: 40 + Math.random() * 60, color: `hsl(${Math.random()*360}, 60%, 50%)` });
-                for (let i = 0; i < 80; i++) decors.push({ type: 'fish', x: Math.random() * currentLevel.length, y: Math.random() * (height - 100), speed: (Math.random() * 1.5 + 0.5) * (Math.random() < 0.5 ? 1 : -1), color: `hsl(${currentLevel.fishHue + Math.random()*40}, 70%, 60%)` });
-                
-                let startObs = 800;
-                for (let x = startObs; x < currentLevel.length - 500; x += 600) {
-                    if (Math.random() < currentLevel.obstacleFreq) {
-                        let r = Math.random();
-                        if (r < 0.4) obstacles.push(new Obstacle(x, height - (150+Math.random()*200) + 50, 120 + Math.random()*100, 150+Math.random()*200, 'rock_bottom'));
-                        else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100 + Math.random()*80, 150+Math.random()*150, 'rock_top'));
-                        else obstacles.push(new Obstacle(x, 200 + Math.random() * (height - 400), 100, 100, 'float'));
-                    }
-                }
-
-                let powerUpCount = Math.floor(currentLevel.length / 800);
-                let shieldChance = 0.4 + Math.min(0.3, (playerData.deathCount || 0) * 0.05);
-                for (let i = 0; i < powerUpCount; i++) {
-                    let px = Math.random() * (currentLevel.length - 400) + 200;
-                    let py = Math.random() * (height - 200) + 100;
-                    let typeRand = Math.random();
-                    let pType = 'shield';
-                    if (typeRand < 0.15) pType = 'magnet';
-                    else if (typeRand < 0.3) pType = 'potion';
-                    else if (typeRand < 0.3 + shieldChance) pType = 'shield';
-                    else if (typeRand < 0.85) pType = 'chili';
-                    else pType = 'health';
-                    
-                    let valid = true; obstacles.forEach(o => { if (px > o.x - 50 && px < o.x + o.w + 50 && py > o.y - 50 && py < o.y + o.h + 50) valid = false; });
-                    if (valid) powerups.push(new PowerUp(px, py, pType));
-                }
-
-                // Coins
-                let coinCount = Math.floor(currentLevel.length / 300);
-                for (let i=0; i<coinCount; i++) {
-                    let cx = Math.random() * (currentLevel.length - 200) + 200;
-                    let cy = Math.random() * (height - 100) + 50;
-                    coins.push(new Coin(cx, cy));
-                }
-
-                const SEGMENT_SIZE = 500; const segments = currentLevel.length / SEGMENT_SIZE;
-                for(let s = 1; s < segments; s++) {
-                    let startX = s * SEGMENT_SIZE; 
-                    let density = (s / segments) * 2.5 * currentLevel.enemyDensity; 
-                    let count = Math.floor(density) + (Math.random() < (density % 1) ? 1 : 0);
-                    for(let k=0; k<count; k++) {
-                        let ex = startX + Math.random() * SEGMENT_SIZE; 
-                        let ey = 50 + Math.random() * (height - 100);
-                        let valid = true; obstacles.forEach(o => { if (ex > o.x - 50 && ex < o.x + o.w + 50 && ey > o.y - 50 && ey < o.y + o.h + 50) valid = false; });
-                        let type = currentLevel.enemyType;
-                        if (type === 'mix_small') type = ['jelly', 'puffer', 'eel'][Math.floor(Math.random()*3)];
-                        else if (type === 'mix_big') type = ['seal', 'shark', 'whale'][Math.floor(Math.random()*3)];
-                        else if (type === 'mix_all') type = ['jelly', 'puffer', 'eel', 'seal', 'shark', 'whale', 'angler'][Math.floor(Math.random()*7)];
-                        if(valid) enemies.push(new Enemy(ex, ey, type));
-                    }
-                }
-
-                if (currentLevel.boss) {
-                    boss = new Boss(currentLevel.length, height/2, currentLevel.boss);
-                    goal = new GoalObject(-1000, -1000, 'chest'); // Hide goal
-                } else {
-                    goal = new GoalObject(currentLevel.length, height - 150, (levelIndex === 9) ? 'chest' : 'star');
-                }
+                for (let x = 800; x < currentLevel.length - 500; x += 600) { if (Math.random() < currentLevel.obstacleFreq) { let r = Math.random(); if (r < 0.4) obstacles.push(new Obstacle(x, height - 150, 120, 200, 'rock_bottom')); else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100, 150, 'rock_top')); else obstacles.push(new Obstacle(x, height/2, 100, 100, 'float')); } }
+                for (let i = 0; i < currentLevel.length/800; i++) powerups.push(new PowerUp(Math.random()*(currentLevel.length-400)+200, Math.random()*(height-200)+100, ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
+                for (let i = 0; i < currentLevel.length/300; i++) coins.push(new Coin(Math.random()*(currentLevel.length-200)+200, Math.random()*(height-100)+50));
+                for(let s = 1; s < currentLevel.length/500; s++) { for(let k=0; k<currentLevel.enemyDensity; k++) enemies.push(new Enemy(s*500+Math.random()*500, 50+Math.random()*(height-100), 'jelly')); }
+                if (currentLevel.boss) boss = new Boss(currentLevel.length, height/2, currentLevel.boss); else goal = new GoalObject(currentLevel.length, height - 150, 'star');
             }
-
-            timeLeft = currentLevel.timeLimit; 
-            if(player) { 
-                player.x = 200; player.y = height/2; player.vx = 0; player.vy = 0; 
-                player.health = 100; player.maxEnergy = playerData.upgrades.ink_tank ? 150 : 100; player.energy = player.maxEnergy; 
-                player.hitCooldown = 0; player.color = (playerData.activeSkin === 'robot') ? '#8899aa' : playerColor; 
-                player.orbitInit = false; player.shieldTimer = 0; player.chiliTimer = 0; player.magnetTimer = 0; player.shrinkTimer = 0;
-                // Re-init pet for level (reset skills like turtle block)
-                if (playerData.activePet) player.pet = new Pet(playerData.activePet);
-            }
+            timeLeft = currentLevel.timeLimit; if(player) { player.x = 200; player.y = height/2; player.health = 100; player.energy = player.maxEnergy; if (playerData.activePet) player.pet = new Pet(playerData.activePet); }
         }
 
         function drawBackground() {
-            if (!bgGradient) {
-                bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-                bgGradient.addColorStop(0, currentLevel.bgTop); bgGradient.addColorStop(1, currentLevel.bgBottom);
-            }
-            ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, width, height);
-            ctx.fillStyle = currentLevel.sandColor; ctx.beginPath(); ctx.moveTo(0, height);
-            for (let x = 0; x <= width; x += 50) { let worldX = x + cameraX; ctx.lineTo(x, height - 40 + Math.sin(worldX * 0.005) * 30); }
+            if (!bgGradient) { bgGradient = ctx.createLinearGradient(0, 0, 0, height); bgGradient.addColorStop(0, currentLevel.bgTop); bgGradient.addColorStop(1, currentLevel.bgBottom); }
+            ctx.fillStyle = bgGradient; ctx.fillRect(0, 0, width, height); ctx.fillStyle = currentLevel.sandColor; ctx.beginPath(); ctx.moveTo(0, height);
+            for (let x = 0; x <= width; x += 50) ctx.lineTo(x, height - 40 + Math.sin((x+cameraX) * 0.005) * 30);
             ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.fill();
-            if (currentLevel.name === "Schwarze Tiefe" || currentLevel.name === "Der Kraken-Graben (BOSS)") {
-                let grad = ctx.createRadialGradient(width/2, height/2, height*0.3, width/2, height/2, height*0.9);
-                grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,0.95)');
-                ctx.fillStyle = grad; ctx.fillRect(0,0,width,height);
-            }
         }
-
-        function drawFarDecor() { plankton.forEach(p => p.draw()); farDecors.forEach(d => { let drawX = d.x - cameraX * 0.15; if (isEndless) while (drawX < -500) drawX += 5000; else { while (drawX < -500) drawX += currentLevel.length; while (drawX > width + 500) drawX -= currentLevel.length; } if (drawX > -500 && drawX < width + 500) { ctx.fillStyle = d.color; if (d.type === 'mountain') { ctx.beginPath(); ctx.moveTo(drawX, height); ctx.lineTo(drawX + d.w/2, d.y); ctx.lineTo(drawX + d.w, height); ctx.fill(); } } }); }
-        function drawDecor() { decors.forEach(d => { let drawX = d.x - cameraX * 0.4; if (d.type === 'coral' && drawX > -100 && drawX < width + 100) { ctx.fillStyle = d.color; ctx.beginPath(); ctx.moveTo(drawX, height); ctx.quadraticCurveTo(drawX - 5, height - d.h/2, drawX, d.y - d.h); ctx.quadraticCurveTo(drawX + 5, height - d.h/2, drawX + 15, height); ctx.fill(); } else if (d.type === 'fish') { d.x += d.speed; if (d.x > currentLevel.length + 1000) d.x = -500; if (d.x < -500) d.x = currentLevel.length + 1000; if (drawX > -50 && drawX < width + 50) { ctx.fillStyle = d.color; ctx.save(); ctx.translate(drawX, d.y); if (d.speed < 0) ctx.scale(-1, 1); ctx.beginPath(); ctx.ellipse(0, 0, 8, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore(); } } }); }
-        function drawForeground() { foreDecors.forEach(d => { let drawX = d.x - cameraX * 1.2; if (isEndless) while (drawX < -200) drawX += 5000; else { while (drawX < -200) drawX += currentLevel.length; while (drawX > width + 200) drawX -= currentLevel.length; } if (drawX > -200 && drawX < width + 200) { ctx.fillStyle = d.color; ctx.beginPath(); ctx.moveTo(drawX, height); ctx.quadraticCurveTo(drawX - 20, height - d.h, drawX + 20, height); ctx.fill(); } }); }
 
         function init() {
             loadData(); resize(); window.addEventListener('resize', resize);
             window.addEventListener('keydown', e => { 
                 const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = true; else if(keys.hasOwnProperty(k)) keys[k] = true;
-                
-                // Cheat: Alt + N for Level Skip
                 if (gameState === 'PLAYING' && e.altKey && e.code === 'KeyN') { e.preventDefault(); if (boss) boss.health = 0; else triggerVictory(); }
-                
-                // Cheat: Alt + M for Money (10.000 Coins)
-                if (e.altKey && e.code === 'KeyM') { 
-                    e.preventDefault();
-                    playerData.coins += 10000; 
-                    saveData(); 
-                    playSound('buy'); 
-                    
-                    // Visual Feedback
-                    if (gameState === 'SHOP') {
-                        renderShop(); // Refresh shop UI immediately
-                    } else if (gameState === 'PLAYING' && player) {
-                         showFloatingText("+10.000 MÜNZEN!", player.x, player.y - 50);
-                    } else {
-                        // In Menu
-                         const el = document.createElement('div'); 
-                         el.innerText = "+10.000 MÜNZEN!"; 
-                         el.style.position = 'absolute'; el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%, -50%)';
-                         el.style.color = 'gold'; el.style.fontSize = '30px'; el.style.fontWeight = 'bold'; el.style.textShadow = '0 0 10px black'; el.style.zIndex = '100';
-                         document.body.appendChild(el);
-                         setTimeout(() => el.remove(), 1500);
-                    }
-                }
-
-                if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { 
-                    // Don't prevent default if we are typing name
-                    if (gameState !== 'NAME_INPUT') e.preventDefault(); 
-                }
+                if (e.altKey && e.code === 'KeyM') { e.preventDefault(); playerData.coins += 10000; saveData(); renderShop(); }
+                if([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) && gameState !== 'NAME_INPUT') e.preventDefault(); 
             });
             window.addEventListener('keyup', e => { const k = e.key.toLowerCase(); if(keys.hasOwnProperty(e.key)) keys[e.key] = false; else if(keys.hasOwnProperty(k)) keys[k] = false; });
             window.addEventListener('mousedown', () => mouse.clicked = true); window.addEventListener('mouseup', () => mouse.clicked = false);
-            
             if('ontouchstart' in window) {
-                mobileControls.style.display = 'flex'; document.getElementById('desktop-hints').style.display = 'none';
-                joystickArea.addEventListener('touchstart', e => { e.preventDefault(); isTouchingJoystick = true; touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY; }, {passive: false});
-                
-                joystickArea.addEventListener('touchmove', e => { 
-                    e.preventDefault(); 
-                    if(!isTouchingJoystick) return; 
-                    let rawDx = e.touches[0].clientX - touchStart.x; 
-                    let rawDy = e.touches[0].clientY - touchStart.y; 
-                    let dist = Math.min(Math.hypot(rawDx, rawDy), 50); 
-                    let angle = Math.atan2(rawDy, rawDx); 
-                    joystickVector.x = (Math.cos(angle) * dist) / 50; 
-                    joystickVector.y = (Math.sin(angle) * dist) / 50; 
-                    stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`; 
-                }, {passive: false});
-
-                joystickArea.addEventListener('touchend', (e) => { e.preventDefault(); isTouchingJoystick = false; joystickVector = {x:0, y:0}; stick.style.transform = `translate(0px, 0px)`; });
-                btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); keys[" "] = true; }); btnAttack.addEventListener('touchend', (e) => { e.preventDefault(); keys[" "] = false; });
-                btnSprint.addEventListener('touchstart', (e) => { e.preventDefault(); isTouchingSprint = true; }); btnSprint.addEventListener('touchend', (e) => { e.preventDefault(); isTouchingSprint = false; });
+                mobileControls.style.display = 'flex'; joystickArea.addEventListener('touchstart', e => { e.preventDefault(); isTouchingJoystick = true; touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY; }, {passive: false});
+                joystickArea.addEventListener('touchmove', e => { e.preventDefault(); if(!isTouchingJoystick) return; let rawDx = e.touches[0].clientX - touchStart.x, rawDy = e.touches[0].clientY - touchStart.y, d = Math.min(Math.hypot(rawDx, rawDy), 50), a = Math.atan2(rawDy, rawDx); joystickVector.x = (Math.cos(a)*d)/50; joystickVector.y = (Math.sin(a)*d)/50; stick.style.transform = `translate(${Math.cos(a)*d}px, ${Math.sin(a)*d}px)`; }, {passive: false});
+                joystickArea.addEventListener('touchend', () => { isTouchingJoystick = false; joystickVector = {x:0, y:0}; stick.style.transform = `translate(0px, 0px)`; });
+                btnAttack.addEventListener('touchstart', (e) => { e.preventDefault(); keys[" "] = true; }); btnSprint.addEventListener('touchstart', (e) => { e.preventDefault(); isTouchingSprint = true; }); btnSprint.addEventListener('touchend', (e) => { e.preventDefault(); isTouchingSprint = false; });
             }
             startBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = false; playBackgroundMusic(); startGame(); });
             endlessBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = true; playBackgroundMusic(); startGame(); });
-            resetBtn.addEventListener('click', () => { if(confirm("Bist du sicher? Dein gesamter Fortschritt (Münzen, Skins, Upgrades) wird gelöscht.")) { localStorage.removeItem('krake_data_v1'); location.reload(); } });
-            
+            resetBtn.addEventListener('click', () => { if(confirm("Reset?")) { localStorage.removeItem('krake_data_v1'); location.reload(); } });
             legendBtn.addEventListener('click', () => { menuScreen.style.display = 'none'; legendScreen.style.display = 'flex'; gameState = 'LEGEND'; });
-            highscoreBtn.addEventListener('click', () => { 
-                menuScreen.style.display = 'none'; 
-                highscoreScreen.style.display = 'flex'; 
-                gameState = 'HIGHSCORE'; 
-                renderHighscores(); 
-            });
-
+            highscoreBtn.addEventListener('click', () => { menuScreen.style.display = 'none'; highscoreScreen.style.display = 'flex'; gameState = 'HIGHSCORE'; renderHighscores(); });
             backBtn.addEventListener('click', () => { legendScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
             hsBackBtn.addEventListener('click', () => { highscoreScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
-            
-            // Name Submit
-            submitNameBtn.addEventListener('click', () => {
-                let name = playerNameInput.value.trim().substring(0, 10) || "Krake";
-                saveHighscore(pendingScore.mode, pendingScore.score, name);
-                nameInputScreen.style.display = 'none';
-                
-                if (pendingScore.reason === 'VICTORY' && !isEndless) {
-                     gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; 
-                     let title = document.getElementById('level-title'); let desc = document.getElementById('level-desc'); let info = document.getElementById('level-score-info'); 
-                     info.innerText = `Score: ${pendingScore.score} | Gesamt: ${playerData.coins} Münzen`; 
-                     title.innerText = "Schatz Gefunden!"; title.style.color = "#ffd700"; desc.innerText = "Du bist der reichste Krake im Ozean!"; 
-                } else {
-                    menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
-                    h1.innerText = "Besiegt!"; p.innerText = `Neuer Rekord! Score: ${pendingScore.score}`; h1.style.color = "#ff4444"; 
-                    startBtn.innerText = "Neustart";
-                    gameState = 'MENU';
-                }
-            });
-
+            submitNameBtn.addEventListener('click', () => { saveHighscore(pendingScore.mode, pendingScore.score, playerNameInput.value || "Krake"); nameInputScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
             shopBtn.addEventListener('click', () => openShop('MENU')); levelShopBtn.addEventListener('click', () => openShop('LEVEL_END'));
             shopBackBtn.addEventListener('click', () => { shopScreen.style.display = 'none'; if (previousGameState === 'LEVEL_END') { levelScreen.style.display = 'flex'; gameState = 'LEVEL_END'; } else { menuScreen.style.display = 'flex'; gameState = 'MENU'; } });
-            nextLevelBtn.addEventListener('click', startNextLevel);
-            requestAnimationFrame(gameLoop);
+            nextLevelBtn.addEventListener('click', startNextLevel); requestAnimationFrame(gameLoop);
         }
 
-        function openShop(fromState) { if(fromState === 'MENU') menuScreen.style.display = 'none'; if(fromState === 'LEVEL_END') levelScreen.style.display = 'none'; shopScreen.style.display = 'flex'; gameState = 'SHOP'; previousGameState = fromState; renderShop(); }
+        function openShop(fromState) { if(fromState === 'MENU') menuScreen.style.display = 'none'; else levelScreen.style.display = 'none'; shopScreen.style.display = 'flex'; gameState = 'SHOP'; previousGameState = fromState; renderShop(); }
         function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; bgGradient = null; }
         function startGame() { player = new Player(); particles = []; shockwaves = []; score = 0; setupLevel(0); gameState = 'PLAYING'; menuScreen.style.display = 'none'; playSound('win'); }
-        function startNextLevel() { if (!isEndless && currentLevelIndex < LEVELS.length - 1) { setupLevel(currentLevelIndex + 1); gameState = 'PLAYING'; levelScreen.style.display = 'none'; } else { startGame(); levelScreen.style.display = 'none'; } }
-        
-        function triggerVictory() { 
-            gameState = 'VICTORY_ANIMATION'; 
-            let bonus = isEndless ? Math.floor(score/2) : Math.floor(timeLeft)*10;
-            let earned = score + bonus;
-            let finalScore = score + bonus; 
-            
-            playerData.coins += earned;
-            saveData();
-
-            let mode = isEndless ? 'endless' : 'story';
-            
-            if (!isEndless && currentLevelIndex >= LEVELS.length - 1) {
-                 if (isHighscore('story', finalScore)) {
-                    setTimeout(() => {
-                        gameState = 'NAME_INPUT';
-                        pendingScore = { score: finalScore, mode: 'story', reason: 'VICTORY' };
-                        document.getElementById('new-record-score').innerText = `Score: ${finalScore}`;
-                        nameInputScreen.style.display = 'flex';
-                        playSound('win');
-                    }, 4000);
-                    return; 
-                 }
-            }
-
-            setTimeout(() => { 
-                gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; 
-                let title = document.getElementById('level-title'); let desc = document.getElementById('level-desc'); let info = document.getElementById('level-score-info'); 
-                if (isEndless) {
-                     title.innerText = "Endlos-Lauf Beendet!";
-                     info.innerText = `Gesamt Score: ${score} | Münzen: ${earned}`;
-                     desc.innerText = "Wie weit kommst du beim nächsten Mal?";
-                } else {
-                    info.innerText = `Score: ${score} - Zeitbonus: +${bonus} | Gesamt: ${earned} Münzen`; 
-                    if (currentLevelIndex < LEVELS.length - 1) { title.innerText = `Level ${currentLevelIndex + 1} Geschafft!`; desc.innerText = "Der Ozean wird tiefer und gefährlicher..."; } 
-                    else { title.innerText = "Schatz Gefunden!"; title.style.color = "#ffd700"; desc.innerText = "Du bist der reichste Krake im Ozean!"; } 
-                }
-            }, 4000); 
-        }
-        
-        function gameOver(reason) { 
-            gameState = 'GAMEOVER'; 
-            let mode = isEndless ? 'endless' : 'story';
-            
-            if (isHighscore(mode, score)) {
-                pendingScore = { score: score, mode: mode, reason: 'DEATH' };
-                document.getElementById('new-record-score').innerText = `Score: ${score}`;
-                nameInputScreen.style.display = 'flex';
-                gameState = 'NAME_INPUT';
-                playSound('win'); 
-            } else {
-                menuScreen.style.display = 'flex'; let h1 = menuScreen.querySelector('h1'); let p = menuScreen.querySelector('p'); 
-                h1.innerText = "Besiegt!"; p.innerText = (reason === 'TIME') ? `Die Zeit ist abgelaufen! Score: ${score}` : `Der Ozean war zu wild. Score: ${score}`; h1.style.color = "#ff4444"; 
-                startBtn.innerText = "Neustart"; playSound('lose'); 
-            }
-            
-            playerData.coins += score; playerData.deathCount = (playerData.deathCount || 0) + 1; saveData();
-            stopBackgroundMusic(); 
-        }
+        function startNextLevel() { if (!isEndless && currentLevelIndex < LEVELS.length - 1) { setupLevel(currentLevelIndex + 1); gameState = 'PLAYING'; levelScreen.style.display = 'none'; } else startGame(); }
+        function triggerVictory() { gameState = 'VICTORY_ANIMATION'; playerData.coins += score; saveData(); setTimeout(() => { gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; }, 4000); }
+        function gameOver(reason) { gameState = 'GAMEOVER'; if (isHighscore(isEndless?'endless':'story', score)) { pendingScore = { score, mode: isEndless?'endless':'story' }; nameInputScreen.style.display = 'flex'; gameState = 'NAME_INPUT'; } else { menuScreen.style.display = 'flex'; playSound('lose'); } playerData.coins += score; saveData(); stopBackgroundMusic(); }
 
         function update() {
-            if (gameState === 'MENU' || gameState === 'LEVEL_END' || gameState === 'GAMEOVER' || gameState === 'LEGEND' || gameState === 'SHOP' || gameState === 'HIGHSCORE' || gameState === 'NAME_INPUT') return;
-            if (gameState === 'PLAYING') { if(!isEndless) { timeLeft -= 1/60; if (timeLeft <= 0) { timeLeft = 0; gameOver('TIME'); } } else { timeLeft += 1/60; } }
-            if(!player) player = new Player();
-            player.update();
-            let targetCamX = player.x - width * 0.3; if (targetCamX < 0) targetCamX = 0; 
-            if (!isEndless && targetCamX > currentLevel.length - width + 200) targetCamX = currentLevel.length - width + 200; 
-            cameraX += (targetCamX - cameraX) * 0.1;
-
+            if (['MENU', 'LEVEL_END', 'GAMEOVER', 'LEGEND', 'SHOP', 'HIGHSCORE', 'NAME_INPUT'].includes(gameState)) return;
+            if (gameState === 'PLAYING' && !isEndless) { timeLeft -= 1/60; if (timeLeft <= 0) gameOver('TIME'); }
+            player.update(); cameraX += (Math.max(0, player.x - width*0.3) - cameraX) * 0.1;
             if (isEndless && player.x + width > endlessGenX) generateEndlessChunk();
-
-            enemies.forEach(e => e.update());
-            particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
+            enemies.forEach(e => e.update()); particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
             shockwaves.forEach((s, i) => { s.update(); if(s.alpha <= 0 || s.power <= 0) shockwaves.splice(i, 1); });
-            bubbles.forEach(b => { b.update(); if(b.isTrail && b.life <= 0) b.dead = true; }); bubbles = bubbles.filter(b => !b.dead);
+            bubbles.forEach((b, i) => { b.update(); if(b.isTrail && b.life <= 0) bubbles.splice(i, 1); });
             plankton.forEach(p => p.update()); powerups.forEach(p => p.update()); coins.forEach(c => c.update());
-            
-            if (boss) boss.update();
-
-            if (goal && Math.hypot(player.x - goal.x, player.y - goal.y) < player.radius + 70 && gameState === 'PLAYING') triggerVictory();
+            if (boss) boss.update(); if (goal && Math.hypot(player.x - goal.x, player.y - goal.y) < 100) triggerVictory();
             if (player.health <= 0) gameOver('DEATH');
-            
-            healthFill.style.width = Math.max(0, player.health) + "%"; 
-            energyFill.style.width = (player.energy / player.maxEnergy * 100) + "%"; energyFill.style.background = (player.energy < 25) ? '#888' : '#ffd700';
-            scoreDisplay.innerText = "Punkte: " + score;
-            timerDisplay.innerText = Math.floor(timeLeft);
-            if (!isEndless && timeLeft < 10) timerDisplay.classList.add('time-low'); else timerDisplay.classList.remove('time-low');
-            progressBar.style.width = isEndless ? "100%" : Math.min(100, Math.max(0, (player.x / currentLevel.length) * 100)) + "%";
+            healthFill.style.width = player.health + "%"; energyFill.style.width = (player.energy/player.maxEnergy*100) + "%";
+            scoreDisplay.innerText = "Punkte: " + score; timerDisplay.innerText = Math.floor(timeLeft);
+            progressBar.style.width = isEndless ? "100%" : (player.x / currentLevel.length * 100) + "%";
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, width, height); drawBackground(); drawFarDecor(); lightRays.forEach(r => r.draw()); drawDecor();
-            if (gameState !== 'MENU' && gameState !== 'LEGEND' && gameState !== 'SHOP' && gameState !== 'HIGHSCORE' && gameState !== 'NAME_INPUT') { 
-                obstacles.forEach(o => o.draw()); 
-                if (boss) boss.draw();
-                if (goal) goal.draw(); 
-                particles.forEach(p => p.draw()); coins.forEach(c => c.draw()); powerups.forEach(p => p.draw()); enemies.forEach(e => e.draw()); shockwaves.forEach(s => s.draw()); bubbles.forEach(b => b.draw()); if (player) player.draw(); drawForeground(); 
-            }
-        }
+        function draw() { ctx.clearRect(0, 0, width, height); drawBackground(); plankton.forEach(p => p.draw()); lightRays.forEach(r => r.draw()); decors.forEach(d => { let x = d.x - cameraX*0.4; if (d.type === 'coral' && x > -100 && x < width+100) { ctx.fillStyle = d.color; ctx.fillRect(x, height-d.h, 10, d.h); } }); obstacles.forEach(o => o.draw()); if (boss) boss.draw(); if (goal) goal.draw(); particles.forEach(p => p.draw()); coins.forEach(c => c.draw()); powerups.forEach(p => p.draw()); enemies.forEach(e => e.draw()); shockwaves.forEach(s => s.draw()); bubbles.forEach(b => b.draw()); if (player) player.draw(); }
         function gameLoop() { frames++; update(); draw(); requestAnimationFrame(gameLoop); }
         init();
     </script>

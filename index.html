@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4488ff">
     <!-- <link rel="manifest" href="manifest.json"> -->
-    <title>Der blaue Krake - V1.1 Pets Edition</title>
+    <title>Der blaue Krake - V1.2 Enemy Fix</title>
     <!-- Favicon fallback -->
     <!-- <link rel="icon" type="image/png" href="icon-192x192.png"> -->
     <style>
@@ -223,7 +223,7 @@
     </div>
 
     <div id="menu-screen">
-        <h1>Das Krakenspiel <span style="font-size:16px; vertical-align:middle; color:#88aaff;">V1.1</span></h1>
+        <h1>Das Krakenspiel <span style="font-size:16px; vertical-align:middle; color:#88aaff;">V1.2</span></h1>
         <p>Wähle deine Farbe:</p>
         <div id="color-selection">
             <div class="color-option selected" style="background: #4488ff;" data-color="#4488ff"></div> 
@@ -246,7 +246,7 @@
             <label><input type="checkbox" id="check-music" checked> Musik 🎵</label>
             <label><input type="checkbox" id="check-sfx" checked> Geräusche 🔊</label>
         </div>
-        <div id="version-tag">Version 1.1</div>
+        <div id="version-tag">Version 1.2</div>
     </div>
 
     <div id="level-screen" style="display:none;">
@@ -1060,7 +1060,7 @@
             draw() {
                 let drawX = this.x - cameraX;
                 ctx.save(); ctx.translate(drawX, this.y); 
-                // REMOVED: if (this.pet) this.pet.draw(); <-- Das war der Fehler!
+                
                 if (this.pet && this.pet.type === 'pet_turtle' && !this.pet.abilityUsed) {
                     ctx.save(); ctx.strokeStyle = `rgba(50, 255, 100, ${0.6 + Math.sin(frames*0.1)*0.3})`; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = '#00ff00'; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 22, 0, Math.PI*2); ctx.stroke(); ctx.restore();
                 }
@@ -1164,7 +1164,20 @@
                 for (let x = 800; x < currentLevel.length - 500; x += 600) { if (Math.random() < currentLevel.obstacleFreq) { let r = Math.random(); if (r < 0.4) obstacles.push(new Obstacle(x, height - 150, 120, 200, 'rock_bottom')); else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100, 150, 'rock_top')); else obstacles.push(new Obstacle(x, height/2, 100, 100, 'float')); } }
                 for (let i = 0; i < currentLevel.length/800; i++) powerups.push(new PowerUp(Math.random()*(currentLevel.length-400)+200, Math.random()*(height-200)+100, ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
                 for (let i = 0; i < currentLevel.length/300; i++) coins.push(new Coin(Math.random()*(currentLevel.length-200)+200, Math.random()*(height-100)+50));
-                for(let s = 1; s < currentLevel.length/500; s++) { for(let k=0; k<currentLevel.enemyDensity; k++) enemies.push(new Enemy(s*500+Math.random()*500, 50+Math.random()*(height-100), 'jelly')); }
+                
+                // --- FIX FOR ENEMIES: Use currentLevel.enemyType instead of 'jelly' ---
+                for(let s = 1; s < currentLevel.length/500; s++) { 
+                    for(let k=0; k<currentLevel.enemyDensity; k++) {
+                        let eType = currentLevel.enemyType;
+                        // Handle mix types
+                        if (eType === 'mix_small') eType = ['jelly', 'puffer', 'eel'][Math.floor(Math.random()*3)];
+                        else if (eType === 'mix_big') eType = ['seal', 'shark', 'whale', 'angler'][Math.floor(Math.random()*4)];
+                        else if (eType === 'mix_all') eType = ['jelly', 'puffer', 'eel', 'seal', 'shark', 'angler'][Math.floor(Math.random()*6)];
+                        
+                        enemies.push(new Enemy(s*500+Math.random()*500, 50+Math.random()*(height-100), eType)); 
+                    }
+                }
+
                 if (currentLevel.boss) boss = new Boss(currentLevel.length, height/2, currentLevel.boss); else goal = new GoalObject(currentLevel.length, height - 150, 'star');
             }
             timeLeft = currentLevel.timeLimit; if(player) { player.x = 200; player.y = height/2; player.health = 100; player.energy = player.maxEnergy; if (playerData.activePet) player.pet = new Pet(playerData.activePet); }

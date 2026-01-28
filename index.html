@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4488ff">
-    <link rel="manifest" href="manifest.json">
-    <title>Der blaue Krake - Pets Edition</title>
+    <!-- <link rel="manifest" href="manifest.json"> -->
+    <title>Der blaue Krake - V1.1 Pets Edition</title>
     <!-- Favicon fallback -->
-	<link rel="icon" type="image/png" href="icon-192x192.png">
+    <!-- <link rel="icon" type="image/png" href="icon-192x192.png"> -->
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
         #gameCanvas { display: block; width: 100%; height: 100%; }
@@ -82,7 +82,7 @@
         .magnet-icon { width:30px; height:30px; background: #ffdd00; border: 2px solid #fff; border-radius: 50%; position: relative; }
         .magnet-icon::after { content: 'U'; color: red; font-weight: bold; position: absolute; top: 5px; left: 9px; font-family: sans-serif; }
         .potion-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,2 L12,6 L7,10 L7,22 L17,22 L17,10 L12,6" fill="%23aa00ff" stroke="white" stroke-width="1"/><circle cx="10" cy="18" r="1.5" fill="rgba(255,255,255,0.5)"/><circle cx="14" cy="14" r="2" fill="rgba(255,255,255,0.5)"/></svg>') no-repeat center; }
-        .chili-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,2 Z" fill="%23ffff00" stroke="%23ffaa00" stroke-width="1"/></svg>') no-repeat center; }
+        .chili-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,8 L13,2 Z" fill="%23ffff00" stroke="%23ffaa00" stroke-width="1"/></svg>') no-repeat center; }
         .health-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,21.35 L10.55,20.03 C5.4,15.36 2,12.27 2,8.5 C2,5.41 4.42,3 7.5,3 C9.24,3 10.91,3.81 12,5.08 C13.09,3.81 14.76,3 16.5,3 C19.58,3 22,5.41 22,8.5 C22,12.27 18.6,15.36 13.45,20.03 L12,21.35 Z" fill="red" stroke="white" stroke-width="1"/><path d="M7,6 Q9,6 10,8" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/></svg>') no-repeat center; }
 
         /* Shop */
@@ -110,6 +110,9 @@
         
         /* Endless Mode Button */
         #endless-btn { background: linear-gradient(to bottom, #aa00ff, #5500aa); border-color: #ddaaff; font-size: 18px; padding: 10px 30px; margin-top: 15px; }
+
+        /* Version Tag */
+        #version-tag { position: absolute; bottom: 10px; right: 10px; color: rgba(255,255,255,0.3); font-size: 12px; pointer-events: none; }
 
         /* Responsive */
         @media (max-width: 600px) {
@@ -220,7 +223,7 @@
     </div>
 
     <div id="menu-screen">
-        <h1>Das Krakenspiel</h1>
+        <h1>Das Krakenspiel <span style="font-size:16px; vertical-align:middle; color:#88aaff;">V1.1</span></h1>
         <p>Wähle deine Farbe:</p>
         <div id="color-selection">
             <div class="color-option selected" style="background: #4488ff;" data-color="#4488ff"></div> 
@@ -243,6 +246,7 @@
             <label><input type="checkbox" id="check-music" checked> Musik 🎵</label>
             <label><input type="checkbox" id="check-sfx" checked> Geräusche 🔊</label>
         </div>
+        <div id="version-tag">Version 1.1</div>
     </div>
 
     <div id="level-screen" style="display:none;">
@@ -256,7 +260,8 @@
     </div>
 
     <script>
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
+        // Service Worker disabled for Canvas Preview
+        // if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let settings = { music: true, sfx: true };
@@ -321,6 +326,22 @@
                 osc.connect(biquadFilter); biquadFilter.connect(gainNode);
             } else { osc.connect(gainNode); }
             gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + s.duration);
+        }
+
+        // --- Helper Function for Color Variation ---
+        function varyColor(hex) {
+            let c = hex.startsWith('#') ? hex.substring(1) : hex;
+            if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+            let r = parseInt(c.substring(0,2), 16);
+            let g = parseInt(c.substring(2,4), 16);
+            let b = parseInt(c.substring(4,6), 16);
+            
+            // Randomize Lightness by +/- 20%
+            let variance = 0.8 + Math.random() * 0.4; 
+            r = Math.min(255, Math.floor(r * variance));
+            g = Math.min(255, Math.floor(g * variance));
+            b = Math.min(255, Math.floor(b * variance));
+            return `rgb(${r},${g},${b})`;
         }
 
         const canvas = document.getElementById('gameCanvas');
@@ -445,23 +466,23 @@
         colorOptions.forEach(opt => { opt.addEventListener('click', () => { colorOptions.forEach(o => o.classList.remove('selected')); opt.classList.add('selected'); playerColor = opt.getAttribute('data-color'); }); });
 
         const LEVELS = [
-            { name: "Das Riff", bgTop: "#00ccee", bgBottom: "#005577", sandColor: "#fff8e0", length: 6000, timeLimit: 55, enemyType: 'jelly', enemyDensity: 0.8, obstacleFreq: 0.4, obstacleStyle: 'coral', fishHue: 30, lightColor: 'rgba(255, 255, 200, 0.15)' },
-            { name: "Die Tiefsee", bgTop: "#1a0033", bgBottom: "#000011", sandColor: "#332244", length: 7000, timeLimit: 60, enemyType: 'puffer', enemyDensity: 1.0, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 180, lightColor: 'rgba(100, 200, 255, 0.08)' },
-            { name: "Vulkanzone", bgTop: "#441100", bgBottom: "#220500", sandColor: "#331100", length: 8000, timeLimit: 55, enemyType: 'eel', enemyDensity: 1.2, obstacleFreq: 0.6, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 100, 50, 0.1)' },
-            { name: "Die Eishöhle", bgTop: "#aaccff", bgBottom: "#ffffff", sandColor: "#ddeeff", length: 9000, timeLimit: 50, enemyType: 'seal', enemyDensity: 1.5, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(255, 255, 255, 0.3)' },
-            { name: "Der Abgrund (BOSS)", bgTop: "#000000", bgBottom: "#0a0a2a", sandColor: "#000000", length: 10000, timeLimit: 90, enemyType: 'shark', enemyDensity: 1.5, obstacleFreq: 0.4, obstacleStyle: 'alien', fishHue: 280, lightColor: 'rgba(50, 255, 100, 0.05)', boss: 'sub' },
-            { name: "Versunkene Stadt", bgTop: "#004444", bgBottom: "#001111", sandColor: "#223333", length: 12000, timeLimit: 50, enemyType: 'whale', enemyDensity: 2.5, obstacleFreq: 0.7, obstacleStyle: 'ruin', fishHue: 50, lightColor: 'rgba(200, 255, 200, 0.1)' },
-            { name: "Schwarze Tiefe", bgTop: "#000000", bgBottom: "#000008", sandColor: "#020205", length: 13000, timeLimit: 55, enemyType: 'angler', enemyDensity: 1.8, obstacleFreq: 0.4, obstacleStyle: 'rock', fishHue: 240, lightColor: 'rgba(5, 5, 15, 0.05)' },
-            { name: "Korallenriff Tiefe", bgTop: "#003366", bgBottom: "#001133", sandColor: "#ccbb99", length: 14000, timeLimit: 60, enemyType: 'mix_small', enemyDensity: 2.0, obstacleFreq: 0.6, obstacleStyle: 'coral', fishHue: 300, lightColor: 'rgba(100, 255, 200, 0.1)' },
-            { name: "Offenes Meer", bgTop: "#0055aa", bgBottom: "#002255", sandColor: "#aabbcc", length: 15000, timeLimit: 60, enemyType: 'mix_big', enemyDensity: 2.2, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(200, 200, 255, 0.2)' },
-            { name: "Der Kraken-Graben (BOSS)", bgTop: "#220000", bgBottom: "#110000", sandColor: "#330000", length: 16000, timeLimit: 120, enemyType: 'mix_all', enemyDensity: 2.0, obstacleFreq: 0.5, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 50, 0, 0.1)', boss: 'monster' }
+            { name: "Das Riff", bgTop: "#00ccee", bgBottom: "#005577", sandColor: "#fff8e0", length: 6000, timeLimit: 55, enemyType: 'jelly', enemyDensity: 0.8, obstacleFreq: 0.4, obstacleStyle: 'coral', fishHue: 30, lightColor: 'rgba(255, 255, 200, 0.15)', plantColor: '#00cc66' },
+            { name: "Die Tiefsee", bgTop: "#1a0033", bgBottom: "#000011", sandColor: "#332244", length: 7000, timeLimit: 60, enemyType: 'puffer', enemyDensity: 1.0, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 180, lightColor: 'rgba(100, 200, 255, 0.08)', plantColor: '#aa00cc' },
+            { name: "Vulkanzone", bgTop: "#441100", bgBottom: "#220500", sandColor: "#331100", length: 8000, timeLimit: 55, enemyType: 'eel', enemyDensity: 1.2, obstacleFreq: 0.6, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 100, 50, 0.1)', plantColor: '#cc4400' },
+            { name: "Die Eishöhle", bgTop: "#aaccff", bgBottom: "#ffffff", sandColor: "#ddeeff", length: 9000, timeLimit: 50, enemyType: 'seal', enemyDensity: 1.5, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(255, 255, 255, 0.3)', plantColor: '#88ddff' },
+            { name: "Der Abgrund (BOSS)", bgTop: "#000000", bgBottom: "#0a0a2a", sandColor: "#000000", length: 10000, timeLimit: 90, enemyType: 'shark', enemyDensity: 1.5, obstacleFreq: 0.4, obstacleStyle: 'alien', fishHue: 280, lightColor: 'rgba(50, 255, 100, 0.05)', plantColor: '#00ff44', boss: 'sub' },
+            { name: "Versunkene Stadt", bgTop: "#004444", bgBottom: "#001111", sandColor: "#223333", length: 12000, timeLimit: 50, enemyType: 'whale', enemyDensity: 2.5, obstacleFreq: 0.7, obstacleStyle: 'ruin', fishHue: 50, lightColor: 'rgba(200, 255, 200, 0.1)', plantColor: '#006666' },
+            { name: "Schwarze Tiefe", bgTop: "#000000", bgBottom: "#000008", sandColor: "#020205", length: 13000, timeLimit: 55, enemyType: 'angler', enemyDensity: 1.8, obstacleFreq: 0.4, obstacleStyle: 'rock', fishHue: 240, lightColor: 'rgba(5, 5, 15, 0.05)', plantColor: '#330044' },
+            { name: "Korallenriff Tiefe", bgTop: "#003366", bgBottom: "#001133", sandColor: "#ccbb99", length: 14000, timeLimit: 60, enemyType: 'mix_small', enemyDensity: 2.0, obstacleFreq: 0.6, obstacleStyle: 'coral', fishHue: 300, lightColor: 'rgba(100, 255, 200, 0.1)', plantColor: '#ff00aa' },
+            { name: "Offenes Meer", bgTop: "#0055aa", bgBottom: "#002255", sandColor: "#aabbcc", length: 15000, timeLimit: 60, enemyType: 'mix_big', enemyDensity: 2.2, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(200, 200, 255, 0.2)', plantColor: '#6699ff' },
+            { name: "Der Kraken-Graben (BOSS)", bgTop: "#220000", bgBottom: "#110000", sandColor: "#330000", length: 16000, timeLimit: 120, enemyType: 'mix_all', enemyDensity: 2.0, obstacleFreq: 0.5, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 50, 0, 0.1)', plantColor: '#ff2200', boss: 'monster' }
         ];
 
         let currentLevelIndex = 0; let currentLevel = LEVELS[0];
         const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false, " ": false, Shift: false };
         const mouse = { x: 0, y: 0, clicked: false };
 
-        let player; let enemies = []; let obstacles = []; let particles = []; let bubbles = []; let plankton = []; let decors = []; let farDecors = []; let foreDecors = []; let powerups = []; let coins = []; let goal; let shockwaves = []; let boss = null;
+        let player; let enemies = []; let obstacles = []; let particles = []; let bubbles = []; let plankton = []; let seaPlants = []; let bgFish = []; let powerups = []; let coins = []; let goal; let shockwaves = []; let boss = null;
         let touchStart = { x: 0, y: 0 }; let isTouchingJoystick = false; let joystickVector = { x: 0, y: 0 }; let isTouchingSprint = false;
 
         // --- CLASSES ---
@@ -469,6 +490,84 @@
         class LightRay { constructor() { this.x = Math.random() * width; this.width = Math.random() * 100 + 50; this.angle = Math.PI / 4 + (Math.random() - 0.5) * 0.2; this.swaySpeed = Math.random() * 0.002 + 0.001; this.swayOffset = Math.random() * Math.PI * 2; } draw() { this.x += Math.sin(frames * this.swaySpeed + this.swayOffset) * 0.5; let pulsingAlpha = 0.5 + Math.sin(frames * 0.02 + this.swayOffset) * 0.2; ctx.save(); ctx.translate(this.x, 0); ctx.rotate(this.angle); let grad = ctx.createLinearGradient(0, 0, 0, height); let col = currentLevel.lightColor; grad.addColorStop(0, col.replace(/[\d\.]+\)$/, pulsingAlpha + ')')); grad.addColorStop(0.7, 'rgba(0,0,0,0)'); ctx.fillStyle = grad; ctx.fillRect(-this.width/2, 0, this.width, height * 1.5); ctx.restore(); } }
         let lightRays = [];
         
+        class BackgroundFish {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * (height - 100);
+                this.z = Math.random() * 0.5 + 0.2; // Tiefe: 0.2 (weit weg) bis 0.7 (näher)
+                this.speed = (Math.random() * 0.5 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
+                this.size = 10 + Math.random() * 20;
+                this.color = `rgba(0,0,0,${this.z * 0.5})`; // Schemenhaft
+            }
+            update() {
+                this.x += this.speed;
+                // Welt-Wrap Logik relativ zur Kamera, damit sie immer da sind
+                let screenX = this.x - cameraX * this.z;
+                // Wenn weit links raus, setze nach rechts
+                while (screenX < -100) { this.x += width + 200; screenX = this.x - cameraX * this.z; }
+                while (screenX > width + 100) { this.x -= width + 200; screenX = this.x - cameraX * this.z; }
+            }
+            draw() {
+                let drawX = this.x - cameraX * this.z;
+                ctx.save();
+                ctx.translate(drawX, this.y);
+                if (this.speed > 0) ctx.scale(-1, 1);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size * this.z, this.size * 0.4 * this.z, 0, 0, Math.PI*2);
+                ctx.fill();
+                // Schwanzflosse
+                ctx.beginPath();
+                ctx.moveTo(this.size * 0.8 * this.z, 0);
+                ctx.lineTo(this.size * 1.2 * this.z, -this.size * 0.3 * this.z);
+                ctx.lineTo(this.size * 1.2 * this.z, this.size * 0.3 * this.z);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class SeaPlant {
+            constructor(x, y, color) {
+                this.x = x; 
+                this.y = y; 
+                this.color = color;
+                this.segments = [];
+                let bladeCount = 3 + Math.floor(Math.random() * 3);
+                for(let i=0; i<bladeCount; i++) {
+                    this.segments.push({
+                        h: 30 + Math.random() * 40,
+                        angleOffset: (Math.random() - 0.5) * 0.5,
+                        swaySpeed: 0.05 + Math.random() * 0.05,
+                        phase: Math.random() * Math.PI * 2,
+                        varColor: varyColor(color) // Unique color per blade
+                    });
+                }
+            }
+            draw() {
+                let drawX = this.x - cameraX;
+                if (drawX < -50 || drawX > width + 50) return;
+                
+                ctx.save();
+                ctx.translate(drawX, this.y);
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                
+                this.segments.forEach(seg => {
+                    ctx.strokeStyle = seg.varColor; // Use unique color
+                    let sway = Math.sin(frames * seg.swaySpeed + seg.phase) * 10;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    // Quadratische Kurve für Grashalm
+                    ctx.quadraticCurveTo(
+                        sway * 0.5 + seg.angleOffset * 20, -seg.h / 2, 
+                        sway + seg.angleOffset * 40, -seg.h
+                    );
+                    ctx.stroke();
+                });
+                ctx.restore();
+            }
+        }
+
         class Plankton { 
             constructor() { 
                 this.x = Math.random() * width; 
@@ -536,7 +635,7 @@
                         ctx.strokeStyle = "#aa00ff"; ctx.stroke();
                     } 
                     else if (this.type === 'chili') { 
-                        const p = new Path2D("M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,2 Z");
+                        const p = new Path2D("M13,2 L6,14 L11,14 L9,22 L18,8 L13,8 L13,8 L13,2 Z");
                         ctx.fillStyle = "#ffff00"; ctx.fill(p);
                         ctx.strokeStyle = "#ffaa00"; ctx.lineWidth = 1; ctx.stroke(p);
                     } 
@@ -605,9 +704,9 @@
                         moveSpeed = 0.25; 
                         this.facingRight = (targetX > this.x);
                     } else {
-                        // RUHEMODUS: Sehr nah am Kraken
+                        // RUHEMODUS: Abstand ist eine "Krakenbreite" (ca 70-80px)
                         let orbit = Math.sin(frames * 0.05) * 15; 
-                        targetX = player.x + (offsetDir * 35); 
+                        targetX = player.x + (offsetDir * 75); 
                         targetY = player.y + orbit;
                         
                         if (Math.abs(player.vx) > 0.1) this.facingRight = (player.vx > 0);
@@ -618,7 +717,7 @@
                         if (!coin.collected) {
                             // Wichtig: Distanz vom Maul (this.x, this.y) zur Münze
                             let dist = Math.hypot(this.x - coin.x, this.y - coin.y);
-                            if (dist < 20) { 
+                            if (dist < 15) { // Etwas präziserer Hitbox (kleiner)
                                 coin.collected = true;
                                 playerData.coins++;
                                 score += 10;
@@ -630,8 +729,8 @@
 
                 // --- SCHILDKRÖTEN LOGIK ---
                 } else {
-                    // Position: Panzer klebt am Rücken
-                    targetX = player.x - (offsetDir * 35); 
+                    // Position: Abstand vergrößert (Krakenbreite)
+                    targetX = player.x - (offsetDir * 75); 
                     targetY = player.y;
                     
                     if (Math.abs(player.vx) > 0.1) this.facingRight = (player.vx > 0);
@@ -961,7 +1060,7 @@
             draw() {
                 let drawX = this.x - cameraX;
                 ctx.save(); ctx.translate(drawX, this.y); 
-                if (this.pet) this.pet.draw();
+                // REMOVED: if (this.pet) this.pet.draw(); <-- Das war der Fehler!
                 if (this.pet && this.pet.type === 'pet_turtle' && !this.pet.abilityUsed) {
                     ctx.save(); ctx.strokeStyle = `rgba(50, 255, 100, ${0.6 + Math.sin(frames*0.1)*0.3})`; ctx.lineWidth = 4; ctx.shadowBlur = 15; ctx.shadowColor = '#00ff00'; ctx.beginPath(); ctx.arc(0, 0, this.baseRadius + 22, 0, Math.PI*2); ctx.stroke(); ctx.restore();
                 }
@@ -1033,6 +1132,11 @@
                     else obstacles.push(new Obstacle(x, 200 + Math.random() * (height - 400), 100, 100, 'float'));
                 }
             }
+            // Add some sea plants in endless mode
+            for (let i = 0; i < 20; i++) {
+                seaPlants.push(new SeaPlant(startX + Math.random() * 1500, height - 20, currentLevel.plantColor || '#00cc66'));
+            }
+
             for(let i=0; i<Math.floor(Math.random()*2*diff)+1; i++) enemies.push(new Enemy(startX + Math.random()*1500, 50+Math.random()*(height-100), ['jelly', 'puffer', 'eel', 'seal', 'shark', 'angler'][Math.floor(Math.random()*6)]));
             for(let i=0; i<Math.floor(Math.random()*3)+1; i++) coins.push(new Coin(startX+Math.random()*1500, 100+Math.random()*(height-200)));
             if (Math.random() < 0.5) powerups.push(new PowerUp(startX + Math.random()*1500, 100+Math.random()*(height-200), ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
@@ -1040,13 +1144,23 @@
 
         function setupLevel(levelIndex) {
             boss = null; bossUi.style.display = 'none';
-            if (isEndless) { currentLevel = { name: "Unendlicher Ozean", bgTop: "#001133", bgBottom: "#000000", sandColor: "#111122", length: 99999999, timeLimit: 99999, enemyType: 'mix_all', enemyDensity: 1, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 200, lightColor: 'rgba(255,255,255,0.1)' }; endlessGenX = 500; levelIndicator.innerText = "Endlos-Modus"; } 
+            if (isEndless) { currentLevel = { name: "Unendlicher Ozean", bgTop: "#001133", bgBottom: "#000000", sandColor: "#111122", length: 99999999, timeLimit: 99999, enemyType: 'mix_all', enemyDensity: 1, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 200, lightColor: 'rgba(255,255,255,0.1)', plantColor: '#00cc66' }; endlessGenX = 500; levelIndicator.innerText = "Endlos-Modus"; } 
             else { currentLevelIndex = levelIndex; currentLevel = LEVELS[levelIndex]; levelIndicator.innerText = `Level ${levelIndex + 1}: ${currentLevel.name}`; }
             decors = []; farDecors = []; foreDecors = []; obstacles = []; enemies = []; bubbles = []; plankton = []; powerups = []; coins = []; cameraX = 0; lightRays = []; bgGradient = null;
+            seaPlants = []; bgFish = [];
+            
             for(let i=0; i<5; i++) lightRays.push(new LightRay());
             for(let i=0; i<150; i++) plankton.push(new Plankton());
+            for(let i=0; i<10; i++) bgFish.push(new BackgroundFish()); // Initiale Hintergrundfische
+
             if (isEndless) generateEndlessChunk(); else {
-                for (let i = 0; i < currentLevel.length + 1000; i += 80) decors.push({ type: 'coral', x: i + Math.random()*50, y: height - 20, h: 40 + Math.random() * 60, color: `hsl(${Math.random()*360}, 60%, 50%)` });
+                // Alte Decor-Schleife ersetzt durch SeaPlants
+                for (let i = 0; i < currentLevel.length + 1000; i += 40) { // Dichterer Abstand
+                    if (Math.random() > 0.3) {
+                         seaPlants.push(new SeaPlant(i + Math.random()*20, height - 20, currentLevel.plantColor));
+                    }
+                }
+
                 for (let x = 800; x < currentLevel.length - 500; x += 600) { if (Math.random() < currentLevel.obstacleFreq) { let r = Math.random(); if (r < 0.4) obstacles.push(new Obstacle(x, height - 150, 120, 200, 'rock_bottom')); else if (r < 0.7) obstacles.push(new Obstacle(x, 0, 100, 150, 'rock_top')); else obstacles.push(new Obstacle(x, height/2, 100, 100, 'float')); } }
                 for (let i = 0; i < currentLevel.length/800; i++) powerups.push(new PowerUp(Math.random()*(currentLevel.length-400)+200, Math.random()*(height-200)+100, ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
                 for (let i = 0; i < currentLevel.length/300; i++) coins.push(new Coin(Math.random()*(currentLevel.length-200)+200, Math.random()*(height-100)+50));
@@ -1107,7 +1221,8 @@
             enemies.forEach(e => e.update()); particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
             shockwaves.forEach((s, i) => { s.update(); if(s.alpha <= 0 || s.power <= 0) shockwaves.splice(i, 1); });
             bubbles.forEach((b, i) => { b.update(); if(b.isTrail && b.life <= 0) bubbles.splice(i, 1); });
-            plankton.forEach(p => p.update()); powerups.forEach(p => p.update()); coins.forEach(c => c.update());
+            plankton.forEach(p => p.update()); bgFish.forEach(f => f.update()); // Update Background Fish
+            powerups.forEach(p => p.update()); coins.forEach(c => c.update());
             if (boss) boss.update(); if (goal && Math.hypot(player.x - goal.x, player.y - goal.y) < 100) triggerVictory();
             if (player.health <= 0) gameOver('DEATH');
             healthFill.style.width = player.health + "%"; energyFill.style.width = (player.energy/player.maxEnergy*100) + "%";
@@ -1115,7 +1230,29 @@
             progressBar.style.width = isEndless ? "100%" : (player.x / currentLevel.length * 100) + "%";
         }
 
-        function draw() { ctx.clearRect(0, 0, width, height); drawBackground(); plankton.forEach(p => p.draw()); lightRays.forEach(r => r.draw()); decors.forEach(d => { let x = d.x - cameraX*0.4; if (d.type === 'coral' && x > -100 && x < width+100) { ctx.fillStyle = d.color; ctx.fillRect(x, height-d.h, 10, d.h); } }); obstacles.forEach(o => o.draw()); if (boss) boss.draw(); if (goal) goal.draw(); particles.forEach(p => p.draw()); coins.forEach(c => c.draw()); powerups.forEach(p => p.draw()); enemies.forEach(e => e.draw()); shockwaves.forEach(s => s.draw()); bubbles.forEach(b => b.draw()); if (player) player.draw(); }
+        function draw() { 
+            ctx.clearRect(0, 0, width, height); 
+            drawBackground(); 
+            bgFish.forEach(f => f.draw()); // Draw Background Fish behind everything
+            plankton.forEach(p => p.draw()); 
+            lightRays.forEach(r => r.draw()); 
+            seaPlants.forEach(p => p.draw()); // Draw Sea Plants
+            
+            // Old simple decor code removed
+            
+            obstacles.forEach(o => o.draw()); 
+            if (boss) boss.draw(); 
+            if (goal) goal.draw(); 
+            particles.forEach(p => p.draw()); 
+            coins.forEach(c => c.draw()); 
+            powerups.forEach(p => p.draw()); 
+            enemies.forEach(e => e.draw()); 
+            shockwaves.forEach(s => s.draw()); 
+            bubbles.forEach(b => b.draw()); 
+            if (player) player.draw(); 
+            // Fix: Draw pet AFTER player and OUTSIDE player draw scope
+            if (player && player.pet) player.pet.draw();
+        }
         function gameLoop() { frames++; update(); draw(); requestAnimationFrame(gameLoop); }
         init();
     </script>

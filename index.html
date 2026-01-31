@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4488ff">
-    <title>Der blaue Krake - V1.5 Physics Update</title>
+    <title>Der blaue Krake - V2.0 Final Fix</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; user-select: none; }
         #gameCanvas { display: block; width: 100%; height: 100%; }
@@ -12,6 +12,11 @@
         /* UI Overlay */
         #ui-layer { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 5; display: flex; flex-direction: column; gap: 4px; }
         #top-center-ui { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 5; }
+        
+        /* Permanent Help Button */
+        #ingame-help-btn { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #aaffff; color: #aaffff; border-radius: 50%; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 20; display: none; justify-content: center; align-items: center; pointer-events: auto; transition: transform 0.1s; }
+        #ingame-help-btn:hover { background: rgba(0,0,0,0.8); transform: scale(1.1); }
+        #ingame-help-btn:active { transform: scale(0.95); }
 
         .bar-container { background: #222; border: 1px solid #888; border-radius: 4px; width: 100px; height: 8px; overflow: hidden; position: relative; box-shadow: 1px 1px 3px rgba(0,0,0,0.8); }
         .bar-fill { height: 100%; width: 100%; transition: width 0.1s linear; }
@@ -125,6 +130,8 @@
     <div id="hit-overlay"></div>
     <div id="progress-bar"></div>
 
+    <button id="ingame-help-btn" title="Pause & Hilfe">?</button>
+
     <div id="ui-layer">
         <div id="score-display">Punkte: 0</div>
         <div>
@@ -171,9 +178,9 @@
         </div>
     </div>
 
-    <!-- LEGEND SCREEN -->
+    <!-- LEGEND SCREEN / PAUSE MENU -->
     <div id="legend-screen" style="display:none;">
-        <h2>Legende & Hilfe</h2>
+        <h2 id="legend-title">Legende & Hilfe</h2>
         <div class="legend-grid">
             <div class="legend-item"><div class="icon-container"><div class="legend-icon shield-icon"></div></div><div class="legend-text"><strong>Perlen-Schild</strong><br>Schützt 5 Sek. (+1 Sek/Level)</div></div>
             <div class="legend-item"><div class="icon-container"><div class="legend-icon magnet-icon"></div></div><div class="legend-text"><strong>Münz-Magnet</strong><br>Zieht Münzen an</div></div>
@@ -181,9 +188,17 @@
             <div class="legend-item"><div class="icon-container"><div class="legend-icon chili-icon"></div></div><div class="legend-text"><strong>Energie-Blitz</strong><br>Energie + Turbospeed</div></div>
             <div class="legend-item"><div class="icon-container"><div class="legend-icon health-icon"></div></div><div class="legend-text"><strong>Rubin-Herz</strong><br>Heilt 25% Gesundheit</div></div>
         </div>
+        
+        <div class="settings-group" style="margin-top: 15px; margin-bottom: 5px;">
+             <label><input type="checkbox" id="check-music-ingame"> Musik 🎵</label>
+             <label><input type="checkbox" id="check-sfx-ingame"> SFX 🔊</label>
+        </div>
+
         <h3>Boss-Kämpfe</h3>
         <p style="font-size: 14px; margin: 5px;">Nutze Tinte (Leertaste/Angriff), um Bosse in Level 5 und 10 zu besiegen!</p>
-        <button id="back-btn" class="secondary-btn">Zurück</button>
+        
+        <button id="back-btn" class="secondary-btn" style="background: #4488ff; color:white; border:none; margin-top: 15px;">Zurück</button>
+        <button id="quit-btn" class="secondary-btn" style="color: #ff4444; border-color: #ff4444; display:none; margin-top: 10px;">Spiel beenden</button>
     </div>
 
     <!-- SHOP SCREEN -->
@@ -220,7 +235,7 @@
     </div>
 
     <div id="menu-screen">
-        <h1>Das Krakenspiel <span style="font-size:16px; vertical-align:middle; color:#88aaff;">V1.5</span></h1>
+        <h1>Das Krakenspiel <span style="font-size:16px; vertical-align:middle; color:#88aaff;">V2.0</span></h1>
         <p>Wähle deine Farbe:</p>
         <div id="color-selection">
             <div class="color-option selected" style="background: #4488ff;" data-color="#4488ff"></div> 
@@ -243,7 +258,7 @@
             <label><input type="checkbox" id="check-music" checked> Musik 🎵</label>
             <label><input type="checkbox" id="check-sfx" checked> Geräusche 🔊</label>
         </div>
-        <div id="version-tag">Version 1.5</div>
+        <div id="version-tag">Version 2.0</div>
     </div>
 
     <div id="level-screen" style="display:none;">
@@ -264,9 +279,23 @@
         let settings = { music: true, sfx: true };
         const checkMusic = document.getElementById('check-music');
         const checkSfx = document.getElementById('check-sfx');
+        const checkMusicIngame = document.getElementById('check-music-ingame');
+        const checkSfxIngame = document.getElementById('check-sfx-ingame');
 
-        checkMusic.addEventListener('change', (e) => { settings.music = e.target.checked; if(settings.music) playBackgroundMusic(); else stopBackgroundMusic(); });
-        checkSfx.addEventListener('change', (e) => { settings.sfx = e.target.checked; });
+        function updateSettingsUI() {
+            checkMusic.checked = settings.music;
+            checkMusicIngame.checked = settings.music;
+            checkSfx.checked = settings.sfx;
+            checkSfxIngame.checked = settings.sfx;
+        }
+
+        const handleMusicToggle = (checked) => { settings.music = checked; updateSettingsUI(); if(settings.music) playBackgroundMusic(); else stopBackgroundMusic(); };
+        const handleSfxToggle = (checked) => { settings.sfx = checked; updateSettingsUI(); };
+
+        checkMusic.addEventListener('change', (e) => handleMusicToggle(e.target.checked));
+        checkMusicIngame.addEventListener('change', (e) => handleMusicToggle(e.target.checked));
+        checkSfx.addEventListener('change', (e) => handleSfxToggle(e.target.checked));
+        checkSfxIngame.addEventListener('change', (e) => handleSfxToggle(e.target.checked));
 
         let musicInterval = null;
         function playBackgroundMusic() {
@@ -354,6 +383,7 @@
         const endlessBtn = document.getElementById('endless-btn');
         const legendBtn = document.getElementById('legend-btn');
         const backBtn = document.getElementById('back-btn');
+        const quitBtn = document.getElementById('quit-btn');
         const shopBtn = document.getElementById('shop-btn');
         const shopBackBtn = document.getElementById('shop-back-btn');
         const highscoreBtn = document.getElementById('highscore-btn');
@@ -363,7 +393,9 @@
         const resetBtn = document.getElementById('reset-btn');
         const submitNameBtn = document.getElementById('submit-name-btn');
         const playerNameInput = document.getElementById('player-name-input');
-        
+        const ingameHelpBtn = document.getElementById('ingame-help-btn');
+        const legendTitle = document.getElementById('legend-title');
+
         const healthFill = document.getElementById('health-fill');
         const energyFill = document.getElementById('energy-fill');
         const levelIndicator = document.getElementById('level-indicator');
@@ -465,14 +497,14 @@
         const LEVELS = [
             { name: "Das Riff", bgTop: "#00ccee", bgBottom: "#005577", sandColor: "#fff8e0", length: 6000, timeLimit: 55, enemyType: 'jelly', enemyDensity: 0.8, obstacleFreq: 0.4, obstacleStyle: 'coral', fishHue: 30, lightColor: 'rgba(255, 255, 200, 0.15)', plantColor: '#00cc66' },
             { name: "Die Tiefsee", bgTop: "#1a0033", bgBottom: "#000011", sandColor: "#332244", length: 7000, timeLimit: 60, enemyType: 'puffer', enemyDensity: 1.0, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 180, lightColor: 'rgba(100, 200, 255, 0.08)', plantColor: '#aa00cc', isDark: true },
-            { name: "Vulkanzone", bgTop: "#441100", bgBottom: "#220500", sandColor: "#331100", length: 8000, timeLimit: 55, enemyType: 'eel', enemyDensity: 1.2, obstacleFreq: 0.6, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 100, 50, 0.1)', plantColor: '#cc4400' },
-            { name: "Die Eishöhle", bgTop: "#aaccff", bgBottom: "#ffffff", sandColor: "#ddeeff", length: 9000, timeLimit: 50, enemyType: 'seal', enemyDensity: 1.5, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(255, 255, 255, 0.3)', plantColor: '#88ddff' },
+            { name: "Vulkanzone", bgTop: "#441100", bgBottom: "#220500", sandColor: "#331100", length: 8000, timeLimit: 60, enemyType: 'eel', enemyDensity: 1.2, obstacleFreq: 0.6, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 100, 50, 0.1)', plantColor: '#cc4400' },
+            { name: "Die Eishöhle", bgTop: "#aaccff", bgBottom: "#ffffff", sandColor: "#ddeeff", length: 9000, timeLimit: 60, enemyType: 'seal', enemyDensity: 1.5, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(255, 255, 255, 0.3)', plantColor: '#88ddff' },
             { name: "Der Abgrund (BOSS)", bgTop: "#000000", bgBottom: "#0a0a2a", sandColor: "#000000", length: 10000, timeLimit: 90, enemyType: 'shark', enemyDensity: 1.5, obstacleFreq: 0.4, obstacleStyle: 'alien', fishHue: 280, lightColor: 'rgba(50, 255, 100, 0.05)', plantColor: '#00ff44', boss: 'sub', isDark: true },
-            { name: "Versunkene Stadt", bgTop: "#004444", bgBottom: "#001111", sandColor: "#223333", length: 12000, timeLimit: 50, enemyType: 'whale', enemyDensity: 2.5, obstacleFreq: 0.7, obstacleStyle: 'ruin', fishHue: 50, lightColor: 'rgba(200, 255, 200, 0.1)', plantColor: '#006666' },
-            { name: "Schwarze Tiefe", bgTop: "#000000", bgBottom: "#000008", sandColor: "#020205", length: 13000, timeLimit: 55, enemyType: 'angler', enemyDensity: 1.8, obstacleFreq: 0.4, obstacleStyle: 'rock', fishHue: 240, lightColor: 'rgba(5, 5, 15, 0.05)', plantColor: '#330044', isDark: true },
-            { name: "Korallenriff Tiefe", bgTop: "#003366", bgBottom: "#001133", sandColor: "#ccbb99", length: 14000, timeLimit: 60, enemyType: 'mix_small', enemyDensity: 2.0, obstacleFreq: 0.6, obstacleStyle: 'coral', fishHue: 300, lightColor: 'rgba(100, 255, 200, 0.1)', plantColor: '#ff00aa' },
-            { name: "Offenes Meer", bgTop: "#0055aa", bgBottom: "#002255", sandColor: "#aabbcc", length: 15000, timeLimit: 60, enemyType: 'mix_big', enemyDensity: 2.2, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(200, 200, 255, 0.2)', plantColor: '#6699ff' },
-            { name: "Der Kraken-Graben (BOSS)", bgTop: "#220000", bgBottom: "#110000", sandColor: "#330000", length: 16000, timeLimit: 120, enemyType: 'mix_all', enemyDensity: 2.0, obstacleFreq: 0.5, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 50, 0, 0.1)', plantColor: '#ff2200', boss: 'monster', isDark: true }
+            { name: "Versunkene Stadt", bgTop: "#004444", bgBottom: "#001111", sandColor: "#223333", length: 12000, timeLimit: 70, enemyType: 'whale', enemyDensity: 2.5, obstacleFreq: 0.7, obstacleStyle: 'ruin', fishHue: 50, lightColor: 'rgba(200, 255, 200, 0.1)', plantColor: '#006666' },
+            { name: "Schwarze Tiefe", bgTop: "#000000", bgBottom: "#000008", sandColor: "#020205", length: 13000, timeLimit: 75, enemyType: 'angler', enemyDensity: 1.8, obstacleFreq: 0.4, obstacleStyle: 'rock', fishHue: 240, lightColor: 'rgba(5, 5, 15, 0.05)', plantColor: '#330044', isDark: true },
+            { name: "Korallenriff Tiefe", bgTop: "#003366", bgBottom: "#001133", sandColor: "#ccbb99", length: 14000, timeLimit: 80, enemyType: 'mix_small', enemyDensity: 2.0, obstacleFreq: 0.6, obstacleStyle: 'coral', fishHue: 300, lightColor: 'rgba(100, 255, 200, 0.1)', plantColor: '#ff00aa' },
+            { name: "Offenes Meer", bgTop: "#0055aa", bgBottom: "#002255", sandColor: "#aabbcc", length: 15000, timeLimit: 85, enemyType: 'mix_big', enemyDensity: 2.2, obstacleFreq: 0.5, obstacleStyle: 'ice', fishHue: 200, lightColor: 'rgba(200, 200, 255, 0.2)', plantColor: '#6699ff' },
+            { name: "Der Kraken-Graben (BOSS)", bgTop: "#220000", bgBottom: "#110000", sandColor: "#330000", length: 16000, timeLimit: 140, enemyType: 'mix_all', enemyDensity: 2.0, obstacleFreq: 0.5, obstacleStyle: 'volcano', fishHue: 0, lightColor: 'rgba(255, 50, 0, 0.1)', plantColor: '#ff2200', boss: 'monster', isDark: true }
         ];
 
         let currentLevelIndex = 0; let currentLevel = LEVELS[0];
@@ -909,12 +941,22 @@
                 bossUi.style.display = 'flex';
                 bossName.innerText = this.name;
                 this.vy = 2;
+                this.warningShown = false;
             }
             update() {
                 if (this.dead) return;
                 this.y += this.vy;
                 if (this.y < 100 || this.y > height - 100) this.vy *= -1;
                 let dist = Math.hypot(player.x - this.x, player.y - this.y);
+                
+                // Warning if player swims past boss
+                if (!this.warningShown && player.x > this.x + 200) {
+                    this.warningShown = true;
+                    showFloatingText("BESIEGE DEN BOSS!", player.x, height/2);
+                    // Push player back slightly to indicate wall
+                    player.vx = -10;
+                }
+                
                 if (dist < 60 + player.radius) {
                     if (player.hitCooldown <= 0 && player.shieldTimer <= 0) {
                         player.takeDamage(20);
@@ -1058,8 +1100,7 @@
                     if (speed > 3 && frames % 5 === 0) { let bx = this.x - Math.cos(this.angle)*20; let by = this.y - Math.sin(this.angle)*20; bubbles.push(new Bubble(bx, by, Math.random()*3+1, true)); }
                 }
                 
-                // SAND PARTICLES - FIXED LOGIC
-                // Check if player is near bottom (height - 80) and moving fast enough
+                // SAND PARTICLES
                 if (speed > 0.5 && this.y > height - 80 && frames % 5 === 0) {
                      particles.push(new Particle(this.x + (Math.random()-0.5)*20, height - 10 + (Math.random()*10), currentLevel.sandColor));
                 }
@@ -1082,6 +1123,16 @@
                 if (this.y < this.radius) { this.y = this.radius; this.vy = 0; }
                 if (this.y > height - 40) { this.y = height - 40; this.vy = 0; }
                 if (this.x < 50) { this.x = 50; this.vx = 0; }
+
+                // --- BOUNDARY CHECK (FIX V1.9: Even more generous +2000) ---
+                if (!isEndless && currentLevel) {
+                    let maxBoundary = currentLevel.length + 2000;
+                    if (this.x > maxBoundary) {
+                        this.x = maxBoundary;
+                        this.vx = 0;
+                    }
+                }
+
                 if (this.vx !== 0 || this.vy !== 0) {
                     let targetAngle = Math.atan2(this.vy, this.vx);
                     let diff = targetAngle - this.angle;
@@ -1096,7 +1147,8 @@
                 if (this.energy < 25) return; this.energy -= 25;
                 shockwaves.push(new Shockwave(this.x, this.y, 1));
                 enemies.forEach(enemy => {
-                    if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius * 6) {
+                    // Increased hit radius from * 6 to * 7
+                    if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius * 7) {
                         let angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
                         enemy.vx = Math.cos(angle) * 25; enemy.vy = Math.sin(angle) * 25;
                         enemy.rotationSpeed = (Math.random() - 0.5) * 2;
@@ -1116,7 +1168,7 @@
 
             victoryOrbit() {
                 if (!this.orbitInit) { this.orbitInit = true; this.victoryOrbitAngle = Math.atan2(this.y - goal.y, this.x - goal.x); this.orbitRadius = Math.hypot(this.x - goal.x, this.y - goal.y); if (this.orbitRadius < 80) this.orbitRadius = 80; playSound('win'); }
-                this.victoryOrbitAngle += 0.05; this.orbitRadius += (120 - this.orbitRadius) * 0.05;
+                this.victoryOrbitAngle += 0.05; this.orbitRadius += (90 - this.orbitRadius) * 0.05;
                 this.x = goal.x + Math.cos(this.victoryOrbitAngle) * this.orbitRadius; this.y = goal.y + Math.sin(this.victoryOrbitAngle) * this.orbitRadius;
                 this.angle = this.victoryOrbitAngle + Math.PI / 2;
                 if (frames % 5 === 0) particles.push(new Particle(this.x, this.y, `hsl(${frames%360}, 100%, 50%)`));
@@ -1236,9 +1288,16 @@
 
         function setupLevel(levelIndex) {
             boss = null; bossUi.style.display = 'none';
+            goal = null; 
+            cameraX = 0; // FIX V1.9: Force camera reset
+            
+            // CLEANUP
+            particles = []; 
+            shockwaves = [];
+
             if (isEndless) { currentLevel = { name: "Unendlicher Ozean", bgTop: "#001133", bgBottom: "#000000", sandColor: "#111122", length: 99999999, timeLimit: 99999, enemyType: 'mix_all', enemyDensity: 1, obstacleFreq: 0.5, obstacleStyle: 'rock', fishHue: 200, lightColor: 'rgba(255,255,255,0.1)', plantColor: '#00cc66' }; endlessGenX = 500; levelIndicator.innerText = "Endlos-Modus"; } 
             else { currentLevelIndex = levelIndex; currentLevel = LEVELS[levelIndex]; levelIndicator.innerText = `Level ${levelIndex + 1}: ${currentLevel.name}`; }
-            decors = []; farDecors = []; foreDecors = []; obstacles = []; enemies = []; bubbles = []; plankton = []; powerups = []; coins = []; cameraX = 0; lightRays = []; bgGradient = null;
+            decors = []; farDecors = []; foreDecors = []; obstacles = []; enemies = []; bubbles = []; plankton = []; powerups = []; coins = []; lightRays = []; bgGradient = null;
             seaPlants = []; bgFish = [];
             
             // --- PARALLAX INIT ---
@@ -1250,10 +1309,9 @@
 
             for(let i=0; i<5; i++) lightRays.push(new LightRay());
             for(let i=0; i<150; i++) plankton.push(new Plankton());
-            for(let i=0; i<10; i++) bgFish.push(new BackgroundFish()); // Initiale Hintergrundfische
+            for(let i=0; i<10; i++) bgFish.push(new BackgroundFish()); 
 
             if (isEndless) generateEndlessChunk(); else {
-                // Alte Decor-Schleife ersetzt durch SeaPlants
                 for (let i = 0; i < currentLevel.length + 1000; i += 40) { // Dichterer Abstand
                     if (Math.random() > 0.3) {
                          seaPlants.push(new SeaPlant(i + Math.random()*20, height - 20, currentLevel.plantColor));
@@ -1264,11 +1322,10 @@
                 for (let i = 0; i < currentLevel.length/800; i++) powerups.push(new PowerUp(Math.random()*(currentLevel.length-400)+200, Math.random()*(height-200)+100, ['shield', 'chili', 'health', 'magnet', 'potion'][Math.floor(Math.random()*5)]));
                 for (let i = 0; i < currentLevel.length/300; i++) coins.push(new Coin(Math.random()*(currentLevel.length-200)+200, Math.random()*(height-100)+50));
                 
-                // --- FIX FOR ENEMIES: Use currentLevel.enemyType instead of 'jelly' ---
+                // --- ENEMIES ---
                 for(let s = 1; s < currentLevel.length/500; s++) { 
                     for(let k=0; k<currentLevel.enemyDensity; k++) {
                         let eType = currentLevel.enemyType;
-                        // Handle mix types
                         if (eType === 'mix_small') eType = ['jelly', 'puffer', 'eel'][Math.floor(Math.random()*3)];
                         else if (eType === 'mix_big') eType = ['seal', 'shark', 'whale', 'angler'][Math.floor(Math.random()*4)];
                         else if (eType === 'mix_all') eType = ['jelly', 'puffer', 'eel', 'seal', 'shark', 'angler'][Math.floor(Math.random()*6)];
@@ -1279,7 +1336,20 @@
 
                 if (currentLevel.boss) boss = new Boss(currentLevel.length, height/2, currentLevel.boss); else goal = new GoalObject(currentLevel.length, height - 150, 'star');
             }
-            timeLeft = currentLevel.timeLimit; if(player) { player.x = 200; player.y = height/2; player.health = 100; player.energy = player.maxEnergy; if (playerData.activePet) player.pet = new Pet(playerData.activePet); }
+            
+            timeLeft = currentLevel.timeLimit; 
+            
+            if(player) { 
+                player.x = 200; 
+                player.y = height/2; 
+                player.vx = 0;
+                player.vy = 0;
+                player.health = 100; 
+                player.angle = 0; 
+                player.energy = player.maxEnergy; 
+                player.orbitInit = false; 
+                if (playerData.activePet) player.pet = new Pet(playerData.activePet); 
+            }
         }
 
         function drawBackground() {
@@ -1313,9 +1383,46 @@
             startBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = false; playBackgroundMusic(); startGame(); });
             endlessBtn.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); isEndless = true; playBackgroundMusic(); startGame(); });
             resetBtn.addEventListener('click', () => { if(confirm("Reset?")) { localStorage.removeItem('krake_data_v1'); location.reload(); } });
-            legendBtn.addEventListener('click', () => { menuScreen.style.display = 'none'; legendScreen.style.display = 'flex'; gameState = 'LEGEND'; });
+            legendBtn.addEventListener('click', () => { 
+                previousGameState = 'MENU';
+                legendScreen.style.display = 'flex'; menuScreen.style.display = 'none'; gameState = 'LEGEND'; 
+                quitBtn.style.display = 'none'; backBtn.innerText = 'Zurück'; legendTitle.innerText = "Legende & Hilfe";
+                updateSettingsUI();
+            });
             highscoreBtn.addEventListener('click', () => { menuScreen.style.display = 'none'; highscoreScreen.style.display = 'flex'; gameState = 'HIGHSCORE'; renderHighscores(); });
-            backBtn.addEventListener('click', () => { legendScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
+            
+            backBtn.addEventListener('click', () => { 
+                legendScreen.style.display = 'none'; 
+                if (previousGameState === 'PLAYING') {
+                    gameState = 'PLAYING';
+                } else {
+                    menuScreen.style.display = 'flex'; 
+                    gameState = 'MENU'; 
+                }
+            });
+
+            quitBtn.addEventListener('click', () => {
+                if (confirm("Spiel wirklich beenden?")) {
+                    legendScreen.style.display = 'none';
+                    menuScreen.style.display = 'flex';
+                    gameState = 'MENU';
+                    stopBackgroundMusic();
+                    ingameHelpBtn.style.display = 'none';
+                }
+            });
+
+            ingameHelpBtn.addEventListener('click', () => {
+                if (gameState === 'PLAYING') {
+                    previousGameState = 'PLAYING';
+                    gameState = 'LEGEND';
+                    legendScreen.style.display = 'flex';
+                    quitBtn.style.display = 'inline-block';
+                    backBtn.innerText = 'Weiter spielen';
+                    legendTitle.innerText = "Pause";
+                    updateSettingsUI();
+                }
+            });
+
             hsBackBtn.addEventListener('click', () => { highscoreScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
             submitNameBtn.addEventListener('click', () => { saveHighscore(pendingScore.mode, pendingScore.score, playerNameInput.value || "Krake"); nameInputScreen.style.display = 'none'; menuScreen.style.display = 'flex'; gameState = 'MENU'; });
             shopBtn.addEventListener('click', () => openShop('MENU')); levelShopBtn.addEventListener('click', () => openShop('LEVEL_END'));
@@ -1325,13 +1432,42 @@
 
         function openShop(fromState) { if(fromState === 'MENU') menuScreen.style.display = 'none'; else levelScreen.style.display = 'none'; shopScreen.style.display = 'flex'; gameState = 'SHOP'; previousGameState = fromState; renderShop(); }
         function resize() { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; bgGradient = null; }
-        function startGame() { player = new Player(); particles = []; shockwaves = []; score = 0; setupLevel(0); gameState = 'PLAYING'; menuScreen.style.display = 'none'; playSound('win'); }
-        function startNextLevel() { if (!isEndless && currentLevelIndex < LEVELS.length - 1) { setupLevel(currentLevelIndex + 1); gameState = 'PLAYING'; levelScreen.style.display = 'none'; } else startGame(); }
-        function triggerVictory() { gameState = 'VICTORY_ANIMATION'; playerData.coins += score; saveData(); setTimeout(() => { gameState = 'LEVEL_END'; levelScreen.style.display = 'flex'; }, 4000); }
-        function gameOver(reason) { gameState = 'GAMEOVER'; if (isHighscore(isEndless?'endless':'story', score)) { pendingScore = { score, mode: isEndless?'endless':'story' }; nameInputScreen.style.display = 'flex'; gameState = 'NAME_INPUT'; } else { menuScreen.style.display = 'flex'; playSound('lose'); } playerData.coins += score; saveData(); stopBackgroundMusic(); }
+        
+        function startGame() { 
+            player = new Player(); particles = []; shockwaves = []; score = 0; setupLevel(0); gameState = 'PLAYING'; 
+            menuScreen.style.display = 'none'; 
+            ingameHelpBtn.style.display = 'flex'; // Show help button
+            playSound('win'); 
+        }
+        
+        function startNextLevel() { if (!isEndless && currentLevelIndex < LEVELS.length - 1) { setupLevel(currentLevelIndex + 1); gameState = 'PLAYING'; levelScreen.style.display = 'none'; ingameHelpBtn.style.display = 'flex'; } else startGame(); }
+        function triggerVictory() { 
+            // V2.0 FIX: Prevent multiple triggers
+            if (gameState === 'VICTORY_ANIMATION') return;
+            
+            gameState = 'VICTORY_ANIMATION'; 
+            playerData.coins += score; 
+            saveData(); 
+            ingameHelpBtn.style.display = 'none'; 
+            setTimeout(() => { 
+                gameState = 'LEVEL_END'; 
+                levelScreen.style.display = 'flex'; 
+            }, 4000); 
+        }
+        function gameOver(reason) { gameState = 'GAMEOVER'; ingameHelpBtn.style.display = 'none'; if (isHighscore(isEndless?'endless':'story', score)) { pendingScore = { score, mode: isEndless?'endless':'story' }; nameInputScreen.style.display = 'flex'; gameState = 'NAME_INPUT'; } else { menuScreen.style.display = 'flex'; playSound('lose'); } playerData.coins += score; saveData(); stopBackgroundMusic(); }
 
         function update() {
+            // V2.0 FIX: Strict GameState Handling
             if (['MENU', 'LEVEL_END', 'GAMEOVER', 'LEGEND', 'SHOP', 'HIGHSCORE', 'NAME_INPUT'].includes(gameState)) return;
+            
+            // V2.0 FIX: Victory Animation Loop Isolation
+            // Only update visuals, NOT logic
+            if (gameState === 'VICTORY_ANIMATION') { 
+                player.update(); 
+                particles.forEach((p, i) => { p.update(); if(p.life <= 0) particles.splice(i, 1); });
+                return; 
+            }
+
             if (gameState === 'PLAYING' && !isEndless) { timeLeft -= 1/60; if (timeLeft <= 0) gameOver('TIME'); }
             player.update(); cameraX += (Math.max(0, player.x - width*0.3) - cameraX) * 0.1;
             if (isEndless && player.x + width > endlessGenX) generateEndlessChunk();
@@ -1340,7 +1476,20 @@
             bubbles.forEach((b, i) => { b.update(); if(b.isTrail && b.life <= 0) bubbles.splice(i, 1); });
             plankton.forEach(p => p.update()); bgFish.forEach(f => f.update()); // Update Background Fish
             powerups.forEach(p => p.update()); coins.forEach(c => c.update());
-            if (boss) boss.update(); if (goal && Math.hypot(player.x - goal.x, player.y - goal.y) < 100) triggerVictory();
+            if (boss) boss.update(); 
+            
+            // --- FIX V1.9: Robust Goal Trigger ---
+            // Trigger if radius check passes OR if player passed goal X-axis while near Y
+            if (goal) {
+                // Ensure goal is not unreachable due to resize (dynamic update)
+                if (goal.type !== 'chest' && goal.y > height - 100) goal.y = height - 100;
+                
+                let dist = Math.hypot(player.x - goal.x, player.y - goal.y);
+                let passedGoal = (player.x > goal.x) && (Math.abs(player.y - goal.y) < 300);
+                
+                if (dist < 150 || passedGoal) triggerVictory();
+            }
+
             if (player.health <= 0) gameOver('DEATH');
             healthFill.style.width = player.health + "%"; energyFill.style.width = (player.energy/player.maxEnergy*100) + "%";
             scoreDisplay.innerText = "Punkte: " + score; timerDisplay.innerText = Math.floor(timeLeft);
